@@ -1,0 +1,2 @@
+/*ブラウザの標準CSSを打ち消すファイルを読み込む*/
+@import url('destyle.css');
