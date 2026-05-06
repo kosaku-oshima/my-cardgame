@@ -251,6 +251,7 @@ function startPhase(player) {
     recoveryPp(player);
     activateFollower(player.field);
     drawCard(player);
+    renderGame(players);
 }
 
 //【フェーズ管理】メインフェイズ（行動）の処理
@@ -301,6 +302,7 @@ function cpuAction(cpu, opponentPlayer) {
         if (playableCards.length > 0) {
             const highestAtCard = playableCards.reduce((a, b) => (a.currentAt > b.currentAt ? a : b));
             playCard(cpu, highestAtCard);    
+            renderGame(players);
         }
     }
     //攻撃可能なカードがあり、かつ倒せるフォロワーがいれば攻撃する
@@ -340,24 +342,74 @@ function showPlayerState(player) {
 // ====================================
 // ここからターン管理
 // ====================================
-let currentPlayerIndex = 0;
+let currentPlayerIndex = 1;
+document.addEventListener("DOMContentLoaded", async () => {
+    const turnEndBtn = document.getElementById("turn-end-btn");
 
-//ゲーム開始
-startGame(players);
+    turnEndBtn.addEventListener("click", () => {
+        console.log("trun-end-btn is clicked.")
+        finishTurn(); 
+     });
 
-//ターン処理
-turnCycle();
-// startPhase(players[0]);
-// playCard(players[0], players[0].hand[0]);
-// endPhase(players[0]);
+    //ゲーム開始
+    startGame(players);
 
-// startPhase(players[1]);
-// playCard(players[1], players[1].hand[0]);
-// endPhase(players[1]);
+    //ターン処理
+    turnCycle();
+    renderGame(players);
+});
 
-// startTurn(players[0]);
-// playCard(players[0], players[0].hand[0]);
-// battle(players[0], players[0].field[0], players[1], players[1].field[0]);
-// attackLeader(players[0].field[0], players[1]);
-// checkWinner(players);
-// endTurn(players[0]);
+
+// ====================================
+// 画面の描画に使う関数
+// ====================================
+function renderGame(players) {
+    console.log("renderGame is called.")
+    const player = players[0];
+    const cpu = players[1];
+
+    renderPlayerStatus(player, "player");
+    renderPlayerStatus(cpu, "cpu");
+
+    renderCardList(player.hand, "player-hand");
+    renderCardList(player.field, "player-field");
+
+    renderCardList(cpu.hand, "cpu-hand");
+    renderCardList(cpu.field, "cpu-field");
+}
+
+function renderPlayerStatus(player, prefix) {
+    console.log("renderPlayerStatus is called.")
+    document.getElementById(`${prefix}-name`).textContent = player.name;
+    document.getElementById(`${prefix}-hp`).textContent = player.hp;
+    document.getElementById(`${prefix}-pp`).textContent =
+      `${player.currentPp} / ${player.maxPp}`;
+  }
+
+  function renderCardList(cards, elementId) {
+    const area = document.getElementById(elementId);
+    area.innerHTML = "";
+
+    cards.forEach((card, index) => {
+        const cardElement = document.createElement("div");
+        cardElement.className = "card";
+
+        cardElement.innerHTML = `
+        <div><strong>${card.name}</strong></div>
+        <div>コスト: ${card.cost}</div>
+        <div>攻撃力: ${card.currentAt ?? card.at}</div>
+        <div>体力: ${card.currentHp ?? card.hp}</div>
+        <div>不活性: ${card.isInactivated ?? null}</div>
+        `;
+
+        if (elementId === "player-hand") {
+            cardElement.addEventListener("click", () => {
+                const player = players[0];
+                playCard(player, card);
+                renderGame(players);
+            });
+        }
+
+        area.appendChild(cardElement);
+    });
+}

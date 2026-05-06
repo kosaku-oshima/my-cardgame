@@ -4,11 +4,55 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>my-cargame</title>
-
         <link rel="stylesheet" href="style.css">
     </head>
     <body>
-        <h1>フィールド</h1>
-        <script src="main.js"></script>
+        <main class="game-board">
+            <!-- CPU側 -->
+            <section class="player-area cpu-area">
+                <div class="hand-area">
+                    <h2>CPUの手札</h2>
+                    <div id="cpu-hand" class="card-row"></div>
+                </div>
+            
+                <div class="status-area">
+                    <h2>CPU情報</h2>
+                    <p>名前: <span id="cpu-name"></span></p>
+                    <p>HP: <span id="cpu-hp"></span></p>
+                    <p>PP: <span id="cpu-pp"></span></p>
+                </div>
+
+                <div class="field-area">
+                    <h2>CPUの場</h2>
+                    <div id="cpu-field" class="card-row"></div>
+                </div>
+            </section> 
+        
+            <!-- 自分側 -->
+            <section class="player-area player-area-bottom">
+                <div class="field-area">
+                    <h2>自分の場</h2>
+                    <div id="player-field" class="card-row"></div>
+                </div>
+            
+                <div class="status-area">
+                    <h2>自分情報</h2>
+                    <p>名前: <span id="player-name"></span></p>
+                    <p>HP: <span id="player-hp"></span></p>
+                    <p>PP: <span id="player-pp"></span></p>
+                </div>
+            
+                <div class="hand-area">
+                    <h2>自分の手札</h2>
+                    <div id="player-hand" class="card-row"></div>
+                </div>
+
+                <div>
+                    <button id="turn-end-btn" type="button">ターンエンド</button>
+                </div>
+            </section>
+        </main>
+        
     </body>
+    <script src="main.js"></script>
 </html>

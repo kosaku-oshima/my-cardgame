@@ -1,2 +1,47 @@
 /*ブラウザの標準CSSを打ち消すファイルを読み込む*/
 @import url('destyle.css');
+
+.game-board {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+  
+  .player-area {
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+  }
+  
+  .status-area {
+    background: #f5f5f5;
+    padding: 8px;
+    margin: 8px 0;
+  }
+  
+  .card-row {
+    display: flex;
+    gap: 8px;
+    min-height: 100px;
+    padding: 8px;
+    border: 1px dashed #aaa;
+  }
+  
+  .card {
+    width: 100px;
+    min-height: 140px;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 8px;
+    background: white;
+    font-size: 14px;
+  }
+
+  #turn-end-btn {
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 8px 16px;
+    background: #f5f5f5;
+    margin-top: 10px;
+}
