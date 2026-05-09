@@ -38,7 +38,7 @@
     font-size: 14px;
   }
 
-  #turn-end-btn {
+  .buttons button {
     border: 1px solid #333;
     border-radius: 6px;
     padding: 8px 16px;

@@ -1,3 +1,7 @@
+// ====================================
+// ◆ Model ◆
+// ====================================
+//プレイヤー情報の定義
 const players = [
     {
         name : "player",
@@ -23,14 +27,15 @@ const players = [
     }
 ];
 
+//カード情報の定義
 const cards = [
-    // type(カードの種類),name、hp(Hit Point),at(Attack Point),cost,isInactivated(1=行動不可、フォロワーでのみ使用)
+    //followerのみデッキ作成時に時にisInactivated(true=行動不能)を付与する。
     {
-        type : "follower",
+        type : "follower", //follower,spell,amuletの3種を実装予定
         name : "エルフの剣士",
-        hp : 1,
-        at : 1,
-        cost : 1,
+        hp : 1, //hit point
+        at : 1, //attack point
+        cost : 1, //召喚コスト
     },
     {
         type : "follower",
@@ -42,20 +47,22 @@ const cards = [
     {
         type : "follower",
         name : "グレムリン",
-        hp : 1,
+        hp : 5,
         at : 2,
         cost : 1,
     },
 ];
 
-//カードプールからデッキを作る関数。今はcard配列をそのままセット
-//followerカードの場合はcurrentHpとcurrentAtをセットし、isInactivatedをtrueにする
+//カードプールからデッキを作る関数
 function createDeck(player, cards) {
-    if (cards && player.deck.length === 0) {
+    if (player.deck.length === 0 && cards) {
+        //今はcard配列をそのままセットする。
         player.deck = cards.map(card => {
             if (card.type !== "follower") {
+                //follower以外はcardsの中身をそのままデッキのカードにする
                 return { ...card };
             }
+            //followerカードの場合はcurrentHp、currentAt、isInactivated=trueをセットする。
             return {
                 ...card,
                 currentHp: card.hp,
@@ -80,9 +87,9 @@ function shuffleDeck(deck) {
     return deck;
   }
 
-//ppの上限を+1して全回復する関数。最大10まで。
+//ppの上限を+1して全回復する関数
 function recoveryPp (player) {
-    const maxLimitPp = 10;
+    const maxLimitPp = 10; //PPは最大10個までとする。
     if (player.maxPp < maxLimitPp) {
         player.maxPp += 1;
         console.log(`${player.name}の最大PPが+1され${player.maxPp}になりました。`);    
@@ -91,46 +98,45 @@ function recoveryPp (player) {
     console.log(`${player.name}のPPが回復し${player.maxPp}になりました。`);    
 }
 
-//fieldのfollowerカードのisInactivatedをfalseにする関数
+//場のfollowerカードをすべて活性化（行動可能状態）する関数
 function activateFollower(field) {
-    if (field.length === 0 ) {
+    if (field.length === 0) {
         console.log("フィールドにカードがないためactiveFollowerは無効です。");
         return;
     }
     field.forEach(card => {
         if (card.type !== "follower") {
-            console.log(`${card.name}はフォロワーではありません`);
+            console.log(`${card.name}はフォロワーではありません。`);
             return;
         }
         card.isInactivated = false;
-        console.log(`${card.name}を活性化しました。`);
+        console.log(`${card.name}が行動可能になりました。`);
     });
 }
 
-// followerカードの場合はisInactivatedをtrueにする関数
+//followerカードを非活性（行動不可状態）にする関数
 function deactivateFollower(card) {
     if (card.type !== "follower") {
         console.log(`${card.name}はフォロワーではありません`);
         return;
     }
     card.isInactivated = true;
-    console.log(`${card.name}を非活性化しました。`);
+    console.log(`${card.name}は行動不能になりました。`);
 }
 
-//カードを1枚ドローする関数
+//デッキからカードを1枚ドローする関数
 function drawCard (player) {
     if (player.deck.length > 0) {
         player.hand.push(player.deck.shift());
-        console.log(`${player.name}の手札が1枚増えました。`);
+        console.log(`${player.name}はデッキからカードを１枚ドローしました。`);
         console.table(player.hand);
     }
 }
 
 //手札から場にカードを出す関数
 function playCard (player, card) {
-    const fieldMaxLength = 3;
+    const fieldMaxLength = 3; //場には最大３枚までカードを出せる。
     const cardIndex = player.hand.indexOf(card);
-
     if (player.currentPp < card.cost) {
         alert("PPが足りません");
         return;
@@ -139,17 +145,26 @@ function playCard (player, card) {
         alert("フィールドに空きがありません");
         return;
     }
-
     if (cardIndex === -1) {
       alert("そのカードは手札にありません");
       return;
     }
-  
-    player.hand.splice(cardIndex, 1);
-    player.field.push(card);
+    player.hand.splice(cardIndex, 1); //手札から対象のカードを削除。
+    player.field.push(card); //場にカードを追加。
     player.currentPp -= card.cost;
-  
     console.log(`${card.name}を場に出しました`);
+}
+
+//カードを墓地に送る関数
+function sendToCemetery(player, card) {
+    const cardIndex = player.field.indexOf(card);
+    if (cardIndex === -1) {
+        console.log(`${card.name}はフィールドに存在しません。`);
+        return;
+    }
+    player.field.splice(cardIndex, 1); //場から対象のカードを削除
+    player.cemetery.push(card); //墓地に対象のカードを追加
+    console.log(`${card.name}を墓地に送りました。`);
 }
 
 //バトル処理の関数
@@ -162,7 +177,7 @@ function battle(attackPlayer, attacker, defendPlayer, defender) {
         console.log("そのカードは攻撃できません。");
         return;
     }
-    deactivateFollower(attacker);
+    deactivateFollower(attacker); //以下の処理中に間違って行動することがないよう先に行動不能にする。
     defender.currentHp -= attacker.currentAt;
     attacker.currentHp -= defender.currentAt;
     console.log(`${attacker.name}が${defender.name}を攻撃しました。`);
@@ -176,19 +191,7 @@ function battle(attackPlayer, attacker, defendPlayer, defender) {
     }
 }
 
-//カードを墓地に送る関数
-function sendToCemetery(player, card) {
-    const cardIndex = player.field.indexOf(card);
-    if (cardIndex === -1) {
-        console.log(`${card.name}はフィールドに存在しません。`);
-        return;
-    }
-    player.field.splice(cardIndex, 1);
-    player.cemetery.push(card);
-    console.log(`${card.name}を墓地に送りました。`);
-}
-
-//プレイヤーを攻撃する関数
+//プレイヤー（リーダー）を直接攻撃したときの関数
 function attackLeader(attacker, targetLeader) {
     if (!attacker || !targetLeader) {
         console.log("攻撃側カードまたは防御側プレイヤーが存在しません。");
@@ -199,12 +202,72 @@ function attackLeader(attacker, targetLeader) {
         return;
     }
     console.log(`${attacker.name}が${targetLeader.name}を攻撃しました。`);
-    deactivateFollower(attacker);
+    deactivateFollower(attacker); //ダメージ計算の前に先に行動不能にしておく。
     targetLeader.hp -= attacker.currentAt;
     if (targetLeader.hp <= 0) {
         targetLeader.hp = 0;
     }
     console.log(`${targetLeader.name}の残りHP: ${targetLeader.hp}`);
+}
+
+//バトル時にプレイヤーが攻撃するフォロワーを選択するための関数
+// battleMode,selectedAttacker,selectedTarget,battleMessageはグローバル変数として定義されている。
+function selectAttacker(card) {
+    //バトルボタンがクリックされ、バトルモードに入っているかを判定。
+    if (!battleMode) {
+        return;
+    }
+    //選択されたカードが行動可能かを判定。
+    if (card.isInactivated) {
+        alert("このカードは攻撃できません。");
+        return;
+    }
+    selectedAttacker = card; //グローバル変数に攻撃するフォロワーを代入。
+    battleMessage.textContent = `${card.name}を選択しました。攻撃対象を選んでください。`; //グローバル変数にメッセージを代入。
+}
+
+//バトル時にプレイヤーが攻撃対象のフォロワーを選択するための関数
+function selectTarget(card) {
+    //バトルボタンがクリックされ、バトルモードに入っているかを判定。
+    if (!battleMode) {
+        return;
+    }
+    //攻撃を行うフォロワーが選択されているかを判定。
+    if (!selectedAttacker) {
+        alert("先に攻撃するカードを選んでください。");
+        return;
+    }
+    selectedTarget = card; //グローバル変数に攻撃対象のフォロワーを代入。
+    const result = confirm(
+        `${selectedAttacker.name}で${selectedTarget.name}を攻撃しますか？` //実行確認。
+    );
+    if (!result) {
+        selectedTarget = null;
+        battleMessage.textContent = "攻撃対象を選び直してください。";
+        return;
+    }
+    //バトルを実行。
+    const player = players[0]; //※この行いらないかも。
+    const cpu = players[1]; //※この行いらないかも。
+    battle(player, selectedAttacker, cpu, selectedTarget);
+
+    //バトル終了とともにグローバル変数を変更。
+    battleMode = false;
+    selectedAttacker = null;
+    selectedTarget = null;
+    battleMessage.textContent = "攻撃しました。次の操作を選んでください。";
+    renderGame(players); //HTML上の表示を更新。
+}
+
+//バトル開始後、ターゲット選択前にターンエンドされた場合にグローバル変数をリセットする関数
+function resetBattleSelection() {
+    battleMode = false;
+    selectedAttacker = null;
+    selectedTarget = null;
+
+    if (battleMessage) {
+        battleMessage.textContent = "操作を選んでください。";
+    }
 }
 
 //勝敗を判定する関数
@@ -227,7 +290,13 @@ function getCurrentPlayer() {
 
 //現在の相手プレイヤーを返す関数
 function getOpponentPlayer() {
+    //3項演算子「条件 ? 条件がtrueのときの値 : 条件がfalseのときの値」
     return players[currentPlayerIndex === 0 ? 1 : 0];
+}
+
+//CPUのターン中にプレイヤーが操作した場合のアラートに使用する関数
+function isPlayerTurn() {
+    return getCurrentPlayer().name === "player";
 }
 
 //ターンプレイヤーを交代させる関数
@@ -236,27 +305,50 @@ function switchTurn() {
     currentPlayerIndex = currentPlayerIndex === 0 ? 1 : 0;
 }
 
+//テストで使う確認用の関数
+// function showPlayerState(player) {
+//     console.log(`=== ${player.name}の状態 ===`);
+//     console.log(`HP: ${player.hp}`);
+//     console.log(`PP: ${player.currentPp}/${player.maxPp}`);
+
+//     console.log("デッキ");
+//     console.table(player.deck);
+
+//     console.log("手札");
+//     console.table(player.hand);
+
+//     console.log("フィールド");
+//     console.table(player.field);
+
+//     console.log("墓地");
+//     console.table(player.cemetery);
+// }
+
+// --------------------------------------------------------
+//ゲームの進行状況、フェーズごとの処理を記述
+// --------------------------------------------------------
 //ゲーム開始時の処理
 function startGame(players) {
     console.log("ゲームを始めます。");
-    createDeck(players[0], cards);
-    shuffleDeck(players[0].deck);
+    createDeck(players[0], cards); //デッキを作成
+    shuffleDeck(players[0].deck); //デッキをシャッフル
     createDeck(players[1], cards);
     shuffleDeck(players[1].deck);
 }
 
 //【フェーズ管理】ターン開始時の処理
 function startPhase(player) {
-    console.log(`${player.name}のターンを始めます`);
-    recoveryPp(player);
-    activateFollower(player.field);
-    drawCard(player);
-    renderGame(players);
+    console.log(`${player.name}のターンを始めます。`);
+    recoveryPp(player); //PP上限+1＆回復する。
+    activateFollower(player.field); //場のフォロワーを行動可能にする。
+    drawCard(player); //デッキからカードを1枚ドローする。
+    renderGame(players); //HTMLの表示を更新する。
 }
 
 //【フェーズ管理】メインフェイズ（行動）の処理
 function mainPhase(player, opponentPlayer) {
     console.log(`${player.name}のメインフェイズを始めます。`);
+    //CPUのターンは自動で行動。
     if (player.name === "cpu") {
         cpuAction(player, opponentPlayer);
         finishTurn();
@@ -265,44 +357,25 @@ function mainPhase(player, opponentPlayer) {
 
 //【フェーズ管理】ターン終了時の処理
 function endPhase(player) {
-    console.log(`${player.name}のターンを終了します`);
+    console.log(`${player.name}のターンを終了します。`);
     switchTurn();
 }
 
-//1ターンの流れを管理
-function turnCycle() {
-    const currentPlayer = getCurrentPlayer();
-    const currentOpponentPlayer = getOpponentPlayer();
-    startPhase(currentPlayer);
-    mainPhase(currentPlayer, currentOpponentPlayer);
-}
-
-//1ターンの終了処理、HTML側で操作されたら呼ぶ想定
-function finishTurn() {
-    const currentPlayer = getCurrentPlayer();
-    endPhase(currentPlayer);
-    const winner = checkWinner(players);
-    if (winner) {
-        console.log(`ゲーム終了：${winner.name}の勝利`);
-        return;
-    }
-    turnCycle();
-}
-
-//cpuの行動
+// --------------------------------------------------------
+// メインフェイズのCPUの行動を記述
+// --------------------------------------------------------
 function cpuAction(cpu, opponentPlayer) {
     if (cpu.name !== "cpu") {
         console.log("CPUのターンではないのにcpuActionが呼ばれました。");
         return;
     }
-    //手札に出せるカードがあれば出す
+    //手札に出せるカードがあれば出す。
     if (cpu.hand.length > 0) {
         const playableCards = cpu.hand.filter(card => card.cost <= cpu.currentPp);
-        //一番ATが高いカードを抽出
         if (playableCards.length > 0) {
-            const highestAtCard = playableCards.reduce((a, b) => (a.currentAt > b.currentAt ? a : b));
-            playCard(cpu, highestAtCard);    
-            renderGame(players);
+            const highestAtCard = playableCards.reduce((a, b) => (a.currentAt > b.currentAt ? a : b));//一番ATが高いカードを抽出。
+            playCard(cpu, highestAtCard); //場に出す。
+            renderGame(players); //HTML上の表示を更新。
         }
     }
     //攻撃可能なカードがあり、かつ倒せるフォロワーがいれば攻撃する
@@ -319,97 +392,155 @@ function cpuAction(cpu, opponentPlayer) {
     }    
 }
 
-//テストで使う確認用の関数
-function showPlayerState(player) {
-    console.log(`=== ${player.name}の状態 ===`);
-    console.log(`HP: ${player.hp}`);
-    console.log(`PP: ${player.currentPp}/${player.maxPp}`);
-
-    console.log("デッキ");
-    console.table(player.deck);
-
-    console.log("手札");
-    console.table(player.hand);
-
-    console.log("フィールド");
-    console.table(player.field);
-
-    console.log("墓地");
-    console.table(player.cemetery);
+// --------------------------------------------------------
+// 各フェーズの呼び出し方を制御する関数を記述
+// --------------------------------------------------------
+//スタートフェイズ、メインフェイズ
+function turnCycle() {
+    const currentPlayer = getCurrentPlayer();
+    const currentOpponentPlayer = getOpponentPlayer();
+    startPhase(currentPlayer);
+    mainPhase(currentPlayer, currentOpponentPlayer);
 }
 
+//エンドフェイズへの移行はプレイヤーの操作を待ってからになるため別関数で定義
+function finishTurn() {
+    const currentPlayer = getCurrentPlayer();
+    endPhase(currentPlayer); //ここでターンプレイヤーを交代。
+    //勝敗判定。
+    const winner = checkWinner(players);
+    if (winner) {
+        console.log(`ゲーム終了：${winner.name}の勝利`);
+        return;
+    }
+    turnCycle(); //相手ターンを行う。
+}
 
 // ====================================
-// ここからターン管理
-// ====================================
-let currentPlayerIndex = 1;
-document.addEventListener("DOMContentLoaded", async () => {
-    const turnEndBtn = document.getElementById("turn-end-btn");
-
-    turnEndBtn.addEventListener("click", () => {
-        console.log("trun-end-btn is clicked.")
-        finishTurn(); 
-     });
-
-    //ゲーム開始
-    startGame(players);
-
-    //ターン処理
-    turnCycle();
-    renderGame(players);
-});
-
-
-// ====================================
+// ◆ View ◆
 // 画面の描画に使う関数
+// 最終的にフィールドとカードイラストは画像、それ以外のカード枠などはJavaScript/HTML/CSSで描画する想定
 // ====================================
+// ステータス、手札、場のカードを描画する関数
 function renderGame(players) {
-    console.log("renderGame is called.")
-    const player = players[0];
-    const cpu = players[1];
+    console.log("renderGame is called.");
+    const player = players[0]; //この行いらないかも。CPUを複数用意するとしたら要改善。
+    const cpu = players[1]; //この行いらないかも。CPUを複数用意するとしたら要改善。
 
+    //ステータスを描画。
     renderPlayerStatus(player, "player");
     renderPlayerStatus(cpu, "cpu");
 
-    renderCardList(player.hand, "player-hand");
-    renderCardList(player.field, "player-field");
-
-    renderCardList(cpu.hand, "cpu-hand");
-    renderCardList(cpu.field, "cpu-field");
+    //手札と場のカードを描画。
+    renderCardList(player.hand, "player-hand", "playerHand");
+    renderCardList(player.field, "player-field", "playerField");
+    renderCardList(cpu.hand, "cpu-hand", "cpuHand");
+    renderCardList(cpu.field, "cpu-field", "cpuField");
 }
 
+// 各プレイヤーのHP、PPなどステータスを描画する関数
 function renderPlayerStatus(player, prefix) {
-    console.log("renderPlayerStatus is called.")
-    document.getElementById(`${prefix}-name`).textContent = player.name;
-    document.getElementById(`${prefix}-hp`).textContent = player.hp;
+    console.log("renderPlayerStatus is called.");
+    //専用のHMTL要素に描画していく。HTML上のidが一致しているか注意。
+    document.getElementById(`${prefix}-name`).textContent = player.name; //名前
+    document.getElementById(`${prefix}-hp`).textContent = player.hp; //HP
     document.getElementById(`${prefix}-pp`).textContent =
-      `${player.currentPp} / ${player.maxPp}`;
-  }
+      `${player.currentPp} / ${player.maxPp}`; //PP
+}
 
-  function renderCardList(cards, elementId) {
+// 手札と場のカードを描画する関数
+function renderCardList(cards, elementId, areaType) {
     const area = document.getElementById(elementId);
     area.innerHTML = "";
 
     cards.forEach((card, index) => {
-        const cardElement = document.createElement("div");
-        cardElement.className = "card";
-
+        const cardElement = document.createElement("div"); //divタグを用意。
+        cardElement.className = "card"; //クラス名を指定。
         cardElement.innerHTML = `
         <div><strong>${card.name}</strong></div>
         <div>コスト: ${card.cost}</div>
         <div>攻撃力: ${card.currentAt ?? card.at}</div>
         <div>体力: ${card.currentHp ?? card.hp}</div>
         <div>不活性: ${card.isInactivated ?? null}</div>
-        `;
+        `; //カード1枚に表示する内容を指定。
 
-        if (elementId === "player-hand") {
+        //自分の手札を描画。
+        if (areaType === "playerHand") {
             cardElement.addEventListener("click", () => {
+                //相手ターンに手札がクリックされた場合のアラート表示。
+                if (!isPlayerTurn()) {
+                    alert("今は自分のターンではありません。");
+                    return;
+                }
+                //バトル中に手札がクリックされた場合のアラート表示。
+                if (battleMode) {
+                    alert("バトル中は手札からカードを出せません。");
+                    return;
+                }
                 const player = players[0];
-                playCard(player, card);
-                renderGame(players);
+                playCard(player, card); //クリックされたカードを場に出す。
+                renderGame(players); //HTML上の表示を更新。
             });
         }
 
+        //自分の場に出ているカードを描画。
+        if (areaType === "playerField") {
+            cardElement.addEventListener("click", () => {
+                selectAttacker(card); //クリックされたカードで攻撃する処理を行う。
+            });
+        }
+
+        //相手の場に出ているカードを描画。
+        if (areaType === "cpuField") {
+            cardElement.addEventListener("click", () => {
+                selectTarget(card); //クリックしたカードを対象に攻撃処理を行う。
+            });
+        }
+
+        //HTMLにここで生成したDOM要素を追加。
         area.appendChild(cardElement);
     });
 }
+
+// ====================================
+// ◆ Controller ◆
+// ここからターン管理
+// ====================================
+//複数の関数で参照する値をグローバル変数として定義。
+let currentPlayerIndex = 1;
+let battleMode = false;
+let selectedAttacker = null;
+let selectedTarget = null;
+let battleMessage = null;
+//画面が読み込まれた時の処理
+document.addEventListener("DOMContentLoaded", async () => {
+    //HTML要素を定義
+    const battleBtn = document.getElementById("battle-btn");
+    const turnEndBtn = document.getElementById("turn-end-btn");
+    battleMessage = document.getElementById("battle-message");
+    //バトルボタンがクリックされた時の処理
+    battleBtn.addEventListener("click", () => {
+        //相手ターン中にクリックされたらアラートを表示。
+        if (!isPlayerTurn()) {
+            alert("今は自分のターンではありません。");
+            return;
+        }
+        //グローバル変数を変更。
+        battleMode = true;
+        selectedAttacker = null;
+        selectedTarget = null;
+        battleMessage.textContent = "どのカードで攻撃するか選択してください。";
+    });
+    //ターンエンドボタンがクリックされた時の処理
+    turnEndBtn.addEventListener("click", () => {
+        console.log("turn-end-btn is clicked.");
+        resetBattleSelection(); //バトルの準備中にターンが終了した場合のリセット処理。
+        finishTurn();  //ターンを終了。
+     });
+
+    startGame(players); //ゲーム開始。
+    turnCycle(); //ターン処理。
+    renderGame(players); //画面描画。
+});
+
+

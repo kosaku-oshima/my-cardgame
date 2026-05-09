@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>my-cargame</title>
+        <title>my-cardgame</title>
         <link rel="stylesheet" href="style.css">
     </head>
     <body>
@@ -16,7 +16,7 @@
                 </div>
             
                 <div class="status-area">
-                    <h2>CPU情報</h2>
+                    <h2>CPUの情報</h2>
                     <p>名前: <span id="cpu-name"></span></p>
                     <p>HP: <span id="cpu-hp"></span></p>
                     <p>PP: <span id="cpu-pp"></span></p>
@@ -36,7 +36,7 @@
                 </div>
             
                 <div class="status-area">
-                    <h2>自分情報</h2>
+                    <h2>自分の情報</h2>
                     <p>名前: <span id="player-name"></span></p>
                     <p>HP: <span id="player-hp"></span></p>
                     <p>PP: <span id="player-pp"></span></p>
@@ -46,13 +46,15 @@
                     <h2>自分の手札</h2>
                     <div id="player-hand" class="card-row"></div>
                 </div>
-
-                <div>
+                <div class="message-area">
+                    <p id="battle-message">操作を選んでください。</p>
+                </div>
+                <div class="buttons">
+                    <button id="battle-btn" type="button">バトル</button>
                     <button id="turn-end-btn" type="button">ターンエンド</button>
                 </div>
             </section>
         </main>
-        
+        <script src="main.js"></script>
     </body>
-    <script src="main.js"></script>
 </html>
