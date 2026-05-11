@@ -549,6 +549,7 @@ function renderCardList(cards, elementId, areaType) {
         //自分の手札を描画。
         if (areaType === "playerHand") {
             cardElement.addEventListener("click", () => {
+                const player = players[0];
                 //相手ターンに手札がクリックされた場合のアラート表示。
                 if (!isPlayerTurn()) {
                     displayMessage("今は自分のターンではありません。");
@@ -559,7 +560,23 @@ function renderCardList(cards, elementId, areaType) {
                     displayMessage("バトル中は手札からカードを出せません。");
                     return;
                 }
-                const player = players[0];
+                //召喚実行前のPP確認
+                if (player.currentPp < card.cost) {
+                    displayMessage("PPが足りません。");
+                    return;
+                }
+                //フィールド上に空きがあるか確認
+                if (player.field.length >= 3) {
+                    displayMessage("フィールドに空きがありません。");
+                    return;
+                }
+                //実行確認
+                const result = confirm(
+                    `${card.name}を召喚しますか？`
+                );
+                if (!result) {
+                    return;
+                }
                 playCard(player, card); //クリックされたカードを場に出す。
                 renderGame(players); //HTML上の表示を更新。
             });
