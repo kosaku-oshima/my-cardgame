@@ -51,6 +51,76 @@ const cards = [
         at : 2,
         cost : 1,
     },
+    {
+        type: "follower",
+        name: "見習い剣士",
+        hp: 1,
+        at: 1,
+        cost: 1,
+    },
+    {
+        type: "follower",
+        name: "森の弓使い",
+        hp: 1,
+        at: 2,
+        cost: 1,
+    },
+    {
+        type: "follower",
+        name: "盾を持つ兵士",
+        hp: 3,
+        at: 1,
+        cost: 2,
+    },
+    {
+        type: "follower",
+        name: "炎の魔術師",
+        hp: 2,
+        at: 3,
+        cost: 2,
+    },
+    {
+        type: "follower",
+        name: "荒野の戦士",
+        hp: 3,
+        at: 3,
+        cost: 3,
+    },
+    {
+        type: "follower",
+        name: "癒しの聖職者",
+        hp: 4,
+        at: 2,
+        cost: 3,
+    },
+    {
+        type: "follower",
+        name: "鋼の騎士",
+        hp: 5,
+        at: 4,
+        cost: 4,
+    },
+    {
+        type: "follower",
+        name: "雷鳴の獣",
+        hp: 4,
+        at: 5,
+        cost: 4,
+    },
+    {
+        type: "follower",
+        name: "古代の守護者",
+        hp: 7,
+        at: 4,
+        cost: 5,
+    },
+    {
+        type: "follower",
+        name: "竜騎士",
+        hp: 6,
+        at: 7,
+        cost: 6,
+    },
 ];
 
 //カードプールからデッキを作る関数
@@ -124,6 +194,16 @@ function deactivateFollower(card) {
     console.log(`${card.name}は行動不能になりました。`);
 }
 
+//初期手札４枚をドローする関数
+function createInitialHand(player) {
+    if (player.hand.length === 0) {
+        const initialCards = player.deck.splice(0, 4);
+        player.hand.push(...initialCards); //「...」にすることでデッキから切り出した４枚を１枚ずつ手札に追加できる。
+        console.log(`${player.name}は初期手札４枚を引きました。`);
+        console.table(player.hand);
+    }
+}
+
 //デッキからカードを1枚ドローする関数
 function drawCard (player) {
     if (player.deck.length > 0) {
@@ -138,15 +218,15 @@ function playCard (player, card) {
     const fieldMaxLength = 3; //場には最大３枚までカードを出せる。
     const cardIndex = player.hand.indexOf(card);
     if (player.currentPp < card.cost) {
-        alert("PPが足りません");
+        displayMessage("PPが足りません");
         return;
     }
     if (player.field.length >= fieldMaxLength) {
-        alert("フィールドに空きがありません");
+        displayMessage("フィールドに空きがありません");
         return;
     }
     if (cardIndex === -1) {
-      alert("そのカードは手札にありません");
+        displayMessage("そのカードは手札にありません");
       return;
     }
     player.hand.splice(cardIndex, 1); //手札から対象のカードを削除。
@@ -211,7 +291,7 @@ function attackLeader(attacker, targetLeader) {
 }
 
 //バトル時にプレイヤーが攻撃するフォロワーを選択するための関数
-// battleMode,selectedAttacker,selectedTarget,battleMessageはグローバル変数として定義されている。
+// battleMode,selectedAttacker,selectedTarget,gameMessageはグローバル変数として定義されている。
 function selectAttacker(card) {
     //バトルボタンがクリックされ、バトルモードに入っているかを判定。
     if (!battleMode) {
@@ -219,11 +299,11 @@ function selectAttacker(card) {
     }
     //選択されたカードが行動可能かを判定。
     if (card.isInactivated) {
-        alert("このカードは攻撃できません。");
+        displayMessage("このカードは攻撃できません。");
         return;
     }
     selectedAttacker = card; //グローバル変数に攻撃するフォロワーを代入。
-    battleMessage.textContent = `${card.name}を選択しました。攻撃対象を選んでください。`; //グローバル変数にメッセージを代入。
+    displayMessage(`${card.name}を選択しました。攻撃対象を選んでください。`); //メッセージを表示。
 }
 
 //バトル時にプレイヤーが攻撃対象のフォロワーを選択するための関数
@@ -234,7 +314,7 @@ function selectTarget(card) {
     }
     //攻撃を行うフォロワーが選択されているかを判定。
     if (!selectedAttacker) {
-        alert("先に攻撃するカードを選んでください。");
+        displayMessage("先に攻撃するカードを選んでください。");
         return;
     }
     selectedTarget = card; //グローバル変数に攻撃対象のフォロワーを代入。
@@ -243,7 +323,7 @@ function selectTarget(card) {
     );
     if (!result) {
         selectedTarget = null;
-        battleMessage.textContent = "攻撃対象を選び直してください。";
+        displayMessage("攻撃対象を選び直してください。");
         return;
     }
     //バトルを実行。
@@ -255,7 +335,7 @@ function selectTarget(card) {
     battleMode = false;
     selectedAttacker = null;
     selectedTarget = null;
-    battleMessage.textContent = "攻撃しました。次の操作を選んでください。";
+    displayMessage("攻撃しました。次の操作を選んでください。");
     renderGame(players); //HTML上の表示を更新。
 }
 
@@ -264,10 +344,7 @@ function resetBattleSelection() {
     battleMode = false;
     selectedAttacker = null;
     selectedTarget = null;
-
-    if (battleMessage) {
-        battleMessage.textContent = "操作を選んでください。";
-    }
+    displayMessage("操作を選んでください。");
 }
 
 //勝敗を判定する関数
@@ -332,8 +409,10 @@ function startGame(players) {
     console.log("ゲームを始めます。");
     createDeck(players[0], cards); //デッキを作成
     shuffleDeck(players[0].deck); //デッキをシャッフル
+    createInitialHand(players[0]); //初期手札４枚を引く
     createDeck(players[1], cards);
     shuffleDeck(players[1].deck);
+    createInitialHand(players[1]);
 }
 
 //【フェーズ管理】ターン開始時の処理
@@ -434,7 +513,8 @@ function renderGame(players) {
     //手札と場のカードを描画。
     renderCardList(player.hand, "player-hand", "playerHand");
     renderCardList(player.field, "player-field", "playerField");
-    renderCardList(cpu.hand, "cpu-hand", "cpuHand");
+    // renderCardList(cpu.hand, "cpu-hand", "cpuHand");
+    renderCpuHand(cpu);
     renderCardList(cpu.field, "cpu-field", "cpuField");
 }
 
@@ -469,12 +549,12 @@ function renderCardList(cards, elementId, areaType) {
             cardElement.addEventListener("click", () => {
                 //相手ターンに手札がクリックされた場合のアラート表示。
                 if (!isPlayerTurn()) {
-                    alert("今は自分のターンではありません。");
+                    displayMessage("今は自分のターンではありません。");
                     return;
                 }
                 //バトル中に手札がクリックされた場合のアラート表示。
                 if (battleMode) {
-                    alert("バトル中は手札からカードを出せません。");
+                    displayMessage("バトル中は手札からカードを出せません。");
                     return;
                 }
                 const player = players[0];
@@ -502,34 +582,53 @@ function renderCardList(cards, elementId, areaType) {
     });
 }
 
+//メッセージ表示を切り替えるための関数
+function displayMessage(text) {
+    const gameMessage = document.getElementById("game-message");
+    if (!gameMessage) {
+        console.log("メッセージの表示エリアがありません。");
+        return;
+    }
+    gameMessage.textContent =  `▶ ${text}`;
+}
+
+//相手の手札を中身が見えない状態で描画するための関数
+function renderCpuHand(cpu) {
+    const cpuHand = document.getElementById("cpu-hand");
+    cpuHand.innerHTML = "";
+    cpu.hand.forEach(() => {
+        const cardBack = document.createElement("div");
+        cardBack.classList.add("cpu-hand-card-back");
+        cpuHand.appendChild(cardBack);
+    });
+}
+
 // ====================================
 // ◆ Controller ◆
 // ここからターン管理
 // ====================================
 //複数の関数で参照する値をグローバル変数として定義。
-let currentPlayerIndex = 1;
+let currentPlayerIndex = 0;
 let battleMode = false;
 let selectedAttacker = null;
 let selectedTarget = null;
-let battleMessage = null;
 //画面が読み込まれた時の処理
 document.addEventListener("DOMContentLoaded", async () => {
     //HTML要素を定義
     const battleBtn = document.getElementById("battle-btn");
     const turnEndBtn = document.getElementById("turn-end-btn");
-    battleMessage = document.getElementById("battle-message");
     //バトルボタンがクリックされた時の処理
     battleBtn.addEventListener("click", () => {
         //相手ターン中にクリックされたらアラートを表示。
         if (!isPlayerTurn()) {
-            alert("今は自分のターンではありません。");
+            displayMessage("今は自分のターンではありません。");
             return;
         }
         //グローバル変数を変更。
         battleMode = true;
         selectedAttacker = null;
         selectedTarget = null;
-        battleMessage.textContent = "どのカードで攻撃するか選択してください。";
+        displayMessage("どのカードで攻撃するか選択してください。");
     });
     //ターンエンドボタンがクリックされた時の処理
     turnEndBtn.addEventListener("click", () => {

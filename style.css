@@ -1,29 +1,52 @@
 /* ブラウザの標準CSSを打ち消すファイルを読み込む */
 @import url('destyle.css');
 
-/* 画面全体 */
+/* ==============================
+画面全体に影響するもの
+============================== */
 body {
   background: #f8f8f7;
 }
 
-/* ゲーム全体の枠 */
 .game-board {
   max-width: 480px;
   height: 100dvh;
-  margin: 0 auto;
+  margin: 0 auto; /* 上下marginなし、左右中央揃え。 */
   padding: 8px;
+  box-sizing: border-box; /* paddingと枠線が親要素の内側に置かれる。 */
+
+  display: flex; /* flexbox使用。 */
+  flex-direction: column; /* 子要素を立て並びにする。 */
+  gap: 8px; /* 子要素間の空白。 */
+
+  overflow: hidden; /* 要素の範囲（ボックス）からはみ出したコンテンツ（テキストや画像など）を非表示にする。 */
+}
+
+/* ==============================
+プレイヤー・CPU共通エリア
+============================== */
+/* フィールド全体 */
+.field {
+  width: auto;
+  margin: 0 8px;
+  border: 2px solid #333;
+  border-radius: 8px;
+  padding: 4px;
   box-sizing: border-box;
+}
 
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-
+/* フィールド1行：横1列・最大5枚を想定 */
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  min-height: 96px;
+  padding: 4px;
   overflow: hidden;
 }
 
-/* プレイヤー・CPU共通エリア */
+/* フィールド以外の情報エリア */
 .player-area {
-  border: 2px solid #333;
   border-radius: 8px;
   padding: 8px;
   box-sizing: border-box;
@@ -31,13 +54,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-
-  min-height: 0;
-}
-
-/* CPU側・自分側のエリアを画面内に収める */
-.player-area {
-  flex: 1 1 0;
 }
 
 /* ステータス表示 */
@@ -50,31 +66,38 @@ body {
   line-height: 1.3;
 }
 
-/* カードを並べる行 */
-.card-row {
-  display: flex;
-  gap: 6px;
-  min-height: 86px;
-  padding: 6px;
-  border: 1px dashed #aaa;
-  box-sizing: border-box;
-
-  overflow-x: auto;
-  overflow-y: hidden;
-}
-
-/* カード */
+/* カード1枚の見た目 */
 .card {
-  flex: 0 0 auto;
-  width: 72px;
-  min-height: 96px;
+  width: 100%;
+  min-width: 0;
+  padding: 4px;
+  font-size: 10px;
+  line-height: 1.2;
   border: 1px solid #333;
   border-radius: 6px;
-  padding: 6px;
-  background: white;
-  font-size: 11px;
-  line-height: 1.25;
   box-sizing: border-box;
+  background: #fff;
+}
+
+/* フィールド上のカードだけ、5枚並ぶサイズにする */
+.field-row .card {
+  min-height: 90px;
+}
+
+/* ==============================
+プレイヤー専用エリア
+============================== */
+/* メッセージ */
+.message-area {
+  border: 2px solid #333; /* 枠の太さ、種類、色 */
+  border-radius: 8px;    /* 角を丸くする（任意） */
+  padding: 15px;
+}
+
+.message-area legend {
+  padding: 0 10px;       /* タイトルの左右に余白を作り、線を隠す */
+  font-weight: bold;
+  color: #333;
 }
 
 /* ボタンエリア */
@@ -94,7 +117,42 @@ body {
   margin-top: 0;
 }
 
-/* かなり小さい画面向け */
+/* 手札エリアだけ横1列・最大6枚になるようレイアウトを調整 */
+.hand-row {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  min-height: 88px;
+  padding: 4px;
+  overflow: hidden;
+}
+
+/* 手札のカードだけ、6枚並ぶサイズにする */
+.hand-row .card {
+  min-height: 82px;
+}
+
+/* ==============================
+CPU専用エリア
+============================== */
+/* CPUの手札 */
+.cpu-hand-row {
+  display: flex;
+  gap: 3px;
+}
+
+.cpu-hand-card-back {
+  width: 20px;
+  height: 28px;
+  border: 1px solid #222;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #333, #666);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+/* ==============================
+レスポンシブ
+============================== */
 @media (max-height: 700px) {
   .game-board {
     padding: 6px;
@@ -111,60 +169,8 @@ body {
     font-size: 12px;
   }
 
-  .card-row {
-    min-height: 76px;
-    padding: 4px;
-  }
-
-  .card {
-    width: 64px;
-    min-height: 84px;
-    padding: 4px;
-    font-size: 10px;
-  }
-
   .buttons button {
     padding: 5px 10px;
     font-size: 12px;
   }
-}
-
-/* 手札エリアだけ横1列・最大6枚を想定 */
-.hand-row {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 4px;
-  min-height: 88px;
-  padding: 4px;
-  overflow: hidden;
-}
-
-/* 手札のカードだけ、6枚並ぶサイズにする */
-.hand-row .card {
-  width: 100%;
-  min-width: 0;
-  min-height: 82px;
-  padding: 4px;
-  font-size: 10px;
-  line-height: 1.2;
-}
-
-/* フィールドエリア：横1列・最大5枚を想定 */
-.field-row {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 4px;
-  min-height: 96px;
-  padding: 4px;
-  overflow: hidden;
-}
-
-/* フィールド上のカードだけ、5枚並ぶサイズにする */
-.field-row .card {
-  width: 100%;
-  min-width: 0;
-  min-height: 90px;
-  padding: 4px;
-  font-size: 10px;
-  line-height: 1.2;
 }
