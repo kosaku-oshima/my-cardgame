@@ -23,28 +23,141 @@ body {
 }
 
 /* ==============================
-プレイヤー・CPU共通エリア
+フィールド
 ============================== */
+
 /* フィールド全体 */
 .field {
   width: auto;
   margin: 0 8px;
   border: 2px solid #333;
   border-radius: 8px;
-  padding: 4px;
+  padding: 6px;
   box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  /* フィールド内で使うカード・山札・墓地の共通サイズ */
+  --field-card-width: 62px;
+  --field-card-height: 76px;
+
 }
 
-/* フィールド1行：横1列・最大5枚を想定 */
+/*
+  CPU側・プレイヤー側それぞれの盤面。
+  3列構成にする。
+
+  左列：CPU側のdeck/cemetery用
+  中央：カード置き場
+  右列：プレイヤー側のcemetery/deck用
+*/
+/* 
+  CPU側・プレイヤー側それぞれの盤面。
+  左列・右列を、フィールドカードと同じ幅にする。
+*/
+.field-side {
+  display: grid;
+  grid-template-columns: var(--field-card-width) minmax(0, 1fr) var(--field-card-width);
+  gap: 6px;
+  align-items: stretch;
+}
+
+/* deck / cemetery を縦に2つ並べるエリア */
+.side-piles {
+  width: var(--field-card-width);
+
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 4px;
+}
+
+/* CPU側：左列にdeck/cemetery、中央列にカード置き場 */
+.cpu-field-side .side-piles {
+  grid-column: 1;
+}
+
+.cpu-field-side .card-zones {
+  grid-column: 2;
+}
+
+/* プレイヤー側：中央列にカード置き場、右列にcemetery/deck */
+.player-field-side .card-zones {
+  grid-column: 2;
+}
+
+.player-field-side .side-piles {
+  grid-column: 3;
+}
+
+/* deck / cemetery 共通 */
+.pile {
+  width: var(--field-card-width);
+  min-height: var(--field-card-height);
+  border: 1px solid #333;
+  border-radius: 6px;
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 12px;
+}
+
+/* deckの見た目 */
+.deck-pile {
+  background: repeating-linear-gradient(
+    135deg,
+    #444,
+    #444 6px,
+    #666 6px,
+    #666 12px
+  );
+  color: #fff;
+}
+
+/* cemeteryの見た目 */
+.cemetery-pile {
+  background: #f2f2f2;
+  color: #333;
+}
+
+/* カード置き場全体。上段・下段の2行 */
+.card-zones {
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 4px;
+  min-width: 0;
+}
+
+/* カードを置く1行分のエリア。横3列 */
 .field-row {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 4px;
-  min-height: 96px;
-  padding: 4px;
-  overflow: hidden;
+
+  min-height: 78px;
+  min-width: 0;
+
+  align-items: center;
+  justify-items: center;
 }
 
+/* フィールド上のカードだけ小さめに固定 */
+.field-row .card {
+  width: var(--field-card-width);
+  min-height: var(--field-card-height);
+  padding: 3px;
+
+  font-size: 9px;
+  line-height: 1.15;
+}
+
+/* ==============================
+プレイヤー・CPU共通エリア
+============================== */
 /* フィールド以外の情報エリア */
 .player-area {
   border-radius: 8px;
@@ -77,11 +190,6 @@ body {
   border-radius: 6px;
   box-sizing: border-box;
   background: #fff;
-}
-
-/* フィールド上のカードだけ、5枚並ぶサイズにする */
-.field-row .card {
-  min-height: 90px;
 }
 
 /* ==============================

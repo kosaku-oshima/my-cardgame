@@ -22,10 +22,37 @@
 
             <!-- フィールド -->
             <div class="field">
-                <div id="cpu-spell-field" class="field-row"></div> <!--将来的にspell用のエリアになる予定-->
-                <div id="cpu-field" class="field-row"></div>
-                <div id="player-field" class="field-row"></div>
-                <div id="cpu-spell-field" class="field-row"></div> <!--将来的にspell用のエリアになる予定-->
+                <!-- CPU側 -->
+                <section class="field-side cpu-field-side">
+                    <div class="side-piles">
+                        <div id="cpu-deck" class="pile deck-pile">
+                            <span id="cpu-deck-count">0</span>
+                        </div>
+                        <div id="cpu-cemetery" class="pile cemetery-pile">
+                            <span id="cpu-cemetery-count">0</span>
+                        </div>
+                    </div>
+                    <div class="card-zones">
+                        <div id="cpu-spell-field" class="field-row"></div> <!--将来的にspell用のエリアになる予定-->
+                        <div id="cpu-field" class="field-row"></div>
+                    </div>
+                </section>
+                
+                <!-- プレイヤー側 -->
+                <section class="field-side player-field-side">
+                    <div class="card-zones">
+                        <div id="player-field" class="field-row"></div>
+                        <div id="player-spell-field" class="field-row"></div> <!--将来的にspell用のエリアになる予定-->
+                    </div>
+                    <div class="side-piles">
+                        <div id="player-cemetery" class="pile cemetery-pile">
+                            <span id="player-cemetery-count">0</span>
+                        </div>
+                        <div id="player-deck" class="pile deck-pile">
+                            <span id="player-deck-count">0</span>
+                        </div>
+                    </div>
+                </section>
             </div>
         
             <!-- 自分側の手札・ステータス表示 -->

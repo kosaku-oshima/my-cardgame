@@ -513,9 +513,11 @@ function renderGame(players) {
     //手札と場のカードを描画。
     renderCardList(player.hand, "player-hand", "playerHand");
     renderCardList(player.field, "player-field", "playerField");
-    // renderCardList(cpu.hand, "cpu-hand", "cpuHand");
     renderCpuHand(cpu);
     renderCardList(cpu.field, "cpu-field", "cpuField");
+
+    //デッキと墓地のカード枚数を描画。
+    renderDeckCemeteryCount(player, cpu);
 }
 
 // 各プレイヤーのHP、PPなどステータスを描画する関数
@@ -602,6 +604,26 @@ function renderCpuHand(cpu) {
         cpuHand.appendChild(cardBack);
     });
 }
+
+//デッキと墓地のカードの枚数を描画する関数
+function renderDeckCemeteryCount(player, cpu) {
+    const cpuDeckCount = document.getElementById("cpu-deck-count");
+    const cpuCemeteryCount = document.getElementById("cpu-cemetery-count");
+    if (!cpuDeckCount || !cpuCemeteryCount) {
+        console.log(`${cpu.name}のデッキまたは墓地が存在しません。`);
+        return;
+    }
+    cpuDeckCount.textContent = cpu.deck.length;
+    cpuCemeteryCount.textContent = cpu.cemetery.length;
+    const playerDeckCount = document.getElementById("player-deck-count");
+    const playerCemeteryCount = document.getElementById("player-cemetery-count");
+    if (!playerDeckCount || !playerCemeteryCount) {
+        console.log(`${player.name}のデッキまたは墓地が存在しません。`);
+        return;
+    }
+    playerDeckCount.textContent = player.deck.length;
+    playerCemeteryCount.textContent = player.cemetery.length;
+    }
 
 // ====================================
 // ◆ Controller ◆
