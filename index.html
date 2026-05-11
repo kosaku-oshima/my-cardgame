@@ -8,11 +8,11 @@
     </head>
     <body>
         <main class="game-board">
-            <!-- CPU側 -->
+            <!-- CPU側の手札 -->
             <section class="player-area cpu-area">
                 <div class="hand-area">
                     <h2>CPUの手札</h2>
-                    <div id="cpu-hand" class="card-row"></div>
+                    <div id="cpu-hand" class="card-row hand-row"></div>
                 </div>
             
                 <div class="status-area">
@@ -24,7 +24,7 @@
 
                 <div class="field-area">
                     <h2>CPUの場</h2>
-                    <div id="cpu-field" class="card-row"></div>
+                    <div id="cpu-field" class="card-row field-row"></div>
                 </div>
             </section> 
         
@@ -32,7 +32,7 @@
             <section class="player-area player-area-bottom">
                 <div class="field-area">
                     <h2>自分の場</h2>
-                    <div id="player-field" class="card-row"></div>
+                    <div id="player-field" class="card-row field-row"></div>
                 </div>
             
                 <div class="status-area">
@@ -44,7 +44,7 @@
             
                 <div class="hand-area">
                     <h2>自分の手札</h2>
-                    <div id="player-hand" class="card-row"></div>
+                    <div id="player-hand" class="card-row hand-row"></div>
                 </div>
                 <div class="message-area">
                     <p id="battle-message">操作を選んでください。</p>
