@@ -61,15 +61,39 @@
                     <p>HP: <span id="player-hp"></span></p>
                     <p>PP: <span id="player-pp"></span></p>
                 </div>
+                <div id="player-hand" class="hand-row"></div>
                 <fieldset class="message-area">
                     <legend>Message</legend>
-                    <p id="game-message">▶ 操作を選んでください。</p>
+                    <p id="message-text">▶ 操作を選んでください。</p>
+                    <div id="message-actions"></div>
                 </fieldset>
                 <div class="buttons">
                     <button id="battle-btn" type="button">バトル</button>
                     <button id="turn-end-btn" type="button">ターンエンド</button>
                 </div>
-                <div id="player-hand" class="hand-row"></div>
+            </div>
+
+            <!-- カードのプレビューモーダル -->
+            <div id="card-preview-modal" class="card-preview-modal" hidden>
+                <div class="card-preview-content">
+                    <button id="close-card-preview-button" class="modal-close-button">×</button>
+
+                    <div class="preview-card-frame">
+                    <h2 id="preview-card-name"></h2>
+
+                    <div class="preview-card-image-area">
+                        <img id="preview-card-image" alt="">
+                    </div>
+
+                    <div class="preview-card-status">
+                        <p>コスト：<span id="preview-card-cost"></span></p>
+                        <p>攻撃力：<span id="preview-card-at"></span></p>
+                        <p>体力：<span id="preview-card-hp"></span></p>
+                    </div>
+
+                    <p id="preview-card-text"></p>
+                    </div>
+                </div>
             </div>
         </main>
         <script src="main.js"></script>
