@@ -189,14 +189,14 @@ body {
 .leader-panel {
   width: var(--field-card-width);
   min-height: calc(var(--field-card-height) * 2 + 4px);
-  border: 1px solid #333;
+  /* border: 1px solid #333; */
   box-sizing: border-box;
   overflow: hidden;
 
   display: grid;
   grid-template-rows: auto 1fr;
 
-  background: #9b9a9a;
+  /* background: #9b9a9a; */
 }
 
 /* CPU側：右列に置く */
@@ -212,7 +212,7 @@ body {
 /* HP / PP / 名前の部分 */
 .leader-status {
   padding: 4px 3px;
-  border-bottom: 1px solid #333;
+  /* border-bottom: 1px solid #333; */
   box-sizing: border-box;
 
   font-size: 10px;
