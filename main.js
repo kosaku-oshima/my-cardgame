@@ -1,3 +1,6 @@
+// cpuの処理を別ファイルからimport
+import { cpuAction } from "./cpu.js";
+
 // ====================================
 // ◆ Model ◆
 // ====================================
@@ -714,7 +717,18 @@ function mainPhase(player, opponentPlayer) {
     console.log(`${player.name}のメインフェイズを始めます。`);
     //CPUのターンは自動で行動。
     if (player.name === "cpu") {
-        cpuAction(player, opponentPlayer);
+        // cpuAction(player, opponentPlayer);
+        
+        //テストプレイ用にChatGPTが作った強いcpuActionを呼び出す。
+        cpuAction(player, opponentPlayer, {
+            players,
+            isGameOver: () => isGameOver,
+            playCard,
+            battle,
+            attackLeader,
+            renderGame,
+            displayMessageWithActions,
+          });
         finishTurn();
     }
 }
@@ -728,33 +742,34 @@ function endPhase(player) {
 // --------------------------------------------------------
 // メインフェイズのCPUの行動を記述
 // --------------------------------------------------------
-function cpuAction(cpu, opponentPlayer) {
-    if (cpu.name !== "cpu") {
-        console.log("CPUのターンではないのにcpuActionが呼ばれました。");
-        return;
-    }
-    //手札に出せるカードがあれば出す。
-    if (cpu.hand.length > 0) {
-        const playableCards = cpu.hand.filter(card => card.cost <= cpu.currentPp);
-        if (playableCards.length > 0) {
-            const highestAtCard = playableCards.reduce((a, b) => (a.currentAt > b.currentAt ? a : b));//一番ATが高いカードを抽出。
-            playCard(cpu, highestAtCard); //場に出す。
-            renderGame(players); //HTML上の表示を更新。
-        }
-    }
-    //攻撃可能なカードがあり、かつ倒せるフォロワーがいれば攻撃する
-    const attackableCards = cpu.field.filter(card => card.type === "follower" && card.isInactivated === false);
-    if (attackableCards.length > 0) {
-        const attacker = attackableCards.reduce((a, b) => (a.currentAt > b.currentAt ? a : b));
-        const targetCards = opponentPlayer.field.filter(card => card.type === "follower" && attacker.currentAt >= card.currentHp);
-        if (targetCards.length > 0) {
-            const target = targetCards.reduce((a, b) => (a.currentAt > b.currentAt ? a : b));
-            battle(cpu, attacker, opponentPlayer, target);
-        } else {
-            attackLeader(attacker, opponentPlayer);
-        }
-    }    
-}
+// function cpuAction(cpu, opponentPlayer) {
+//     if (cpu.name !== "cpu") {
+//         console.log("CPUのターンではないのにcpuActionが呼ばれました。");
+//         return;
+//     }
+//     //手札に出せるカードがあれば出す。
+//     if (cpu.hand.length > 0) {
+//         const playableCards = cpu.hand.filter(card => card.cost <= cpu.currentPp);
+//         if (playableCards.length > 0) {
+//             const highestAtCard = playableCards.reduce((a, b) => (a.currentAt > b.currentAt ? a : b));//一番ATが高いカードを抽出。
+//             playCard(cpu, highestAtCard); //場に出す。
+//             renderGame(players); //HTML上の表示を更新。
+//         }
+//     }
+//     //攻撃可能なカードがあり、かつ倒せるフォロワーがいれば攻撃する
+//     const attackableCards = cpu.field.filter(card => card.type === "follower" && card.isInactivated === false);
+//     if (attackableCards.length > 0) {
+//         const attacker = attackableCards.reduce((a, b) => (a.currentAt > b.currentAt ? a : b));
+//         const targetCards = opponentPlayer.field.filter(card => card.type === "follower" && attacker.currentAt >= card.currentHp);
+//         if (targetCards.length > 0) {
+//             const target = targetCards.reduce((a, b) => (a.currentAt > b.currentAt ? a : b));
+//             battle(cpu, attacker, opponentPlayer, target);
+//         } else {
+//             attackLeader(attacker, opponentPlayer);
+//         }
+//     }    
+// }
+
 
 // --------------------------------------------------------
 // 各フェーズの呼び出し方を制御する関数を記述
