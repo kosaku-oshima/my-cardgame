@@ -255,12 +255,16 @@ function createInitialHand(player) {
 }
 
 //デッキからカードを1枚ドローする関数
-function drawCard (player) {
+function drawCard(player) {
     if (player.deck.length > 0) {
         player.hand.push(player.deck.shift());
         console.log(`${player.name}はデッキからカードを１枚ドローしました。`);
         console.table(player.hand);
+        return true; //startPhase関数で勝敗判定をするためにtrue/falseを返す
     }
+
+    console.log(`${player.name}はカードを引けませんでした。`);
+    return false;
 }
 
 //手札から場にカードを出す関数
@@ -299,6 +303,9 @@ function sendToCemetery(player, card) {
 
 //手札クリック時にカードを選択済みにする関数
 function selectHandCard(card) {
+    if (isGameOver) {
+        return;
+    } //ゲームが終了していたら入力を受け付けない。
     const player = players[0];
     if(!isPlayerTurn()) {
         displayMessageWithActions("相手ターン中は行動できません。");
@@ -331,6 +338,11 @@ function selectHandCard(card) {
 
 //選択した手札のカードを場に出す関数
 function playSelectedHandCard() {
+    //ゲームが終了していたら入力を受け付けない。
+    if (isGameOver) {
+        return;
+    }
+    //定数の定義
     const player = players[0];
     const card = selectedHandCard; //selectedHandCardを別変数に退避。念のため。
     //selectedHandCardの存在確認。
@@ -411,11 +423,20 @@ function attackLeader(attacker, targetLeader) {
         targetLeader.hp = 0;
     }
     console.log(`${targetLeader.name}の残りHP: ${targetLeader.hp}`);
+    //勝敗判定。
+    const winner = checkWinner(players);
+    if (winner) {
+        finishGame(winner);
+    }
 }
 
 //バトル時にプレイヤーが攻撃するフォロワーを選択するための関数
 // battleMode,selectedAttacker,selectedTarget,gameMessageはグローバル変数として定義されている。
 function selectAttacker(card) {
+    //ゲームが終了していたら入力を受け付けない。
+    if (isGameOver) {
+        return;
+    }
     //相手ターン中は選択不可とする。
     if (!isPlayerTurn()) {
         displayMessageWithActions("今は自分のターンではありません。");
@@ -436,6 +457,10 @@ function selectAttacker(card) {
 
 //バトル時にプレイヤーが攻撃対象のフォロワーを選択するための関数
 function selectTarget(card) {
+    //ゲームが終了していたら入力を受け付けない。
+    if (isGameOver) {
+        return;
+    }
     //バトルボタンがクリックされ、バトルモードに入っているかを判定。
     if (!battleMode) {
         return;
@@ -471,6 +496,10 @@ function selectTarget(card) {
 
 //自分のターンに相手プレイヤー（リーダー）への直接攻撃処理を呼び出す関数
 function attackSelectedLeader() {
+    //ゲームが終わっていた場合に備えた処理。
+    if (isGameOver) {
+        return;
+    }
     const cpu = players[1];
     const attacker = selectedAttacker; //selectedAttackerが何らかの理由で消えた場合に備え別の定数に退避。
     if (!attacker) {
@@ -497,6 +526,10 @@ function attackSelectedLeader() {
     }
     //直接攻撃処理を呼び出す。
     attackLeader(attacker, cpu);
+    //攻撃によってゲーム終了した場合、これ以降の通常処理をしない。
+    if (isGameOver) {
+        return;
+    }
     //グローバル変数のリセット。
     resetActionSelection();
     //メッセージ表示。
@@ -549,6 +582,25 @@ function switchTurn() {
     currentPlayerIndex = currentPlayerIndex === 0 ? 1 : 0;
 }
 
+//ゲーム終了時の処理
+function finishGame(winner) {
+    if (!winner) {
+        return;
+    }
+    //グローバル変数の変更
+    isGameOver = true;
+    battleMode = false;
+    selectedHandCard = null;
+    selectedAttacker = null;
+    selectedTarget = null;
+
+    //メッセージ表示。
+    console.log(`ゲーム終了：${winner.name}の勝利`);
+    displayMessageWithActions(`${winner.name}の勝利です！`);
+    //HTMLを更新。
+    renderGame(players);
+}
+
 //テストで使う確認用の関数
 // function showPlayerState(player) {
 //     console.log(`=== ${player.name}の状態 ===`);
@@ -584,10 +636,20 @@ function startGame(players) {
 
 //【フェーズ管理】ターン開始時の処理
 function startPhase(player) {
+    if (isGameOver) {
+        return;
+    } //何らかの理由でゲームが終わっていた場合に備えた処理。
     console.log(`${player.name}のターンを始めます。`);
     recoveryPp(player); //PP上限+1＆回復する。
     activateFollower(player.field); //場のフォロワーを行動可能にする。
-    drawCard(player); //デッキからカードを1枚ドローする。
+
+    const drawSuccess = drawCard(player); //デッキからカードを1枚ドローすると同時に成功可否を取得。
+    //ドローができなかった（デッキがなくなっていた）場合は相手の勝利とする。
+    if (!drawSuccess) {
+        const winner = getOpponentPlayer();
+        finishGame(winner);
+        return;
+    }
     renderGame(players); //HTMLの表示を更新する。
 }
 
@@ -643,22 +705,32 @@ function cpuAction(cpu, opponentPlayer) {
 // --------------------------------------------------------
 //スタートフェイズ、メインフェイズ
 function turnCycle() {
+    // 前の相手ターンでゲームが終了していたら次のターンは行わない
+    if (isGameOver) {
+        return;
+    }
     const currentPlayer = getCurrentPlayer();
     const currentOpponentPlayer = getOpponentPlayer();
+    //スタートフェイズ
     startPhase(currentPlayer);
+    //自分のスタートフェイズでデッキアウトによりゲームが終わったらその時点で処理をやめる。
+    if (isGameOver) {
+        return;
+    }
+    //メインフェイズ
     mainPhase(currentPlayer, currentOpponentPlayer);
 }
 
 //エンドフェイズへの移行はプレイヤーの操作を待ってからになるため別関数で定義
 function finishTurn() {
+    if (isGameOver) {
+        return;
+    } //何かしらの理由でゲームが終わっていた場合に備えた処理。
     const currentPlayer = getCurrentPlayer();
     endPhase(currentPlayer); //ここでターンプレイヤーを交代。
-    //勝敗判定。
-    const winner = checkWinner(players);
-    if (winner) {
-        console.log(`ゲーム終了：${winner.name}の勝利`);
+    if (isGameOver) {
         return;
-    }
+    } //エンドフェイズで何かしらの理由でゲームが終わった場合に備えた処理。
     turnCycle(); //相手ターンを行う。
 }
 
@@ -841,12 +913,16 @@ let selectedHandCard = null;
 let battleMode = false;
 let selectedAttacker = null;
 let selectedTarget = null;
+let isGameOver = false;
 //画面が読み込まれた時の処理
 document.addEventListener("DOMContentLoaded", async () => {
     //HTML要素を定義
     const turnEndBtn = document.getElementById("turn-end-btn");
     //ターンエンドボタンがクリックされた時の処理
     turnEndBtn.addEventListener("click", () => {
+        if (isGameOver) {
+            return;
+        } //何らかの理由でゲームが終わっていた場合に備えた処理。
         console.log("turn-end-btn is clicked.");
         resetActionSelection(); //バトルの準備中にターンが終了した場合のリセット処理。
         finishTurn();  //ターンを終了。
