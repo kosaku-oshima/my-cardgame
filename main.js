@@ -155,6 +155,12 @@ const messageActions = {
             }
         },
         {
+            label : "リーダーを直接攻撃",
+            onClick : () => {
+                attackSelectedLeader();
+            }
+        },
+        {
             label : "キャンセル",
             onClick : resetActionSelection,
         },
@@ -364,7 +370,7 @@ function playSelectedHandCard() {
     renderGame(players);
 }
 
-//バトル処理の関数
+//バトル処理を担当する関数
 function battle(attackPlayer, attacker, defendPlayer, defender) {
     if (!attacker || !defender) {
         console.log("攻撃側または防御側のカードが存在しません。");
@@ -388,7 +394,7 @@ function battle(attackPlayer, attacker, defendPlayer, defender) {
     }
 }
 
-//プレイヤー（リーダー）を直接攻撃したときの関数
+//プレイヤー（リーダー）を直接攻撃処理を担当する関数
 function attackLeader(attacker, targetLeader) {
     if (!attacker || !targetLeader) {
         console.log("攻撃側カードまたは防御側プレイヤーが存在しません。");
@@ -461,6 +467,42 @@ function selectTarget(card) {
     selectedTarget = null;
     displayMessageWithActions("攻撃しました。次の操作を選んでください。");
     renderGame(players); //HTML上の表示を更新。
+}
+
+//自分のターンに相手プレイヤー（リーダー）への直接攻撃処理を呼び出す関数
+function attackSelectedLeader() {
+    const cpu = players[1];
+    const attacker = selectedAttacker; //selectedAttackerが何らかの理由で消えた場合に備え別の定数に退避。
+    if (!attacker) {
+        displayMessageWithActions("攻撃するカードが選択されていません。");
+        return;
+    }
+    if (!isPlayerTurn()) {
+        displayMessageWithActions("今は自分のターンではありません。");
+        return;
+    }
+
+    if (attacker.isInactivated) {
+        displayMessageWithActions("このカードは攻撃できません。");
+        return;
+    }
+    //実行確認。
+    const result = confirm(`${attacker.name}で相手リーダーを攻撃しますか？`);
+    if (!result) {
+        displayMessageWithActions(
+            `${attacker.name}を選択しました。操作を選んでください。`,
+            messageActions.whenFieldSelected
+        );
+        return;
+    }
+    //直接攻撃処理を呼び出す。
+    attackLeader(attacker, cpu);
+    //グローバル変数のリセット。
+    resetActionSelection();
+    //メッセージ表示。
+    displayMessageWithActions(`${attacker.name}で相手リーダーを攻撃しました。`);
+    //HTMLの更新。
+    renderGame(players);
 }
 
 //グローバル変数をリセットする関数
