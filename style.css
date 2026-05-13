@@ -39,6 +39,7 @@ body {
   gap: 8px;
 
   /* フィールド内で使うカード・山札・墓地の共通サイズ */
+  /* CSS変数を定義している。 */
   --field-card-width: 62px;
   --field-card-height: 76px;
 
@@ -52,42 +53,50 @@ body {
   中央：カード置き場
   右列：プレイヤー側のcemetery/deck用
 */
-/* 
-  CPU側・プレイヤー側それぞれの盤面。
-  左列・右列を、フィールドカードと同じ幅にする。
-*/
 .field-side {
+  /* フィールドを横3列に分ける
+  ┌────────┬────────────────────┬────────┐
+  │ 左列   │ 中央列              │ 右列   │
+  │ 62px   │ 残りの幅全部        │ 62px   │
+  └────────┴────────────────────┴────────┘ */
   display: grid;
+  /*3列だから値を3つ指定する。*/
+  /* 「minmax(0, 1fr)」で最小幅は 0、最大幅は 残りスペースすべてという意味。 */
   grid-template-columns: var(--field-card-width) minmax(0, 1fr) var(--field-card-width);
-  gap: 6px;
-  align-items: stretch;
+  gap: 6px; /*gridの列と列の間に幅を作る（左列  6px  中央列  6px  右列）。*/
+  align-items: stretch; /*gridの中の要素をフィールドの縦幅に合わせて伸ばす。*/
 }
 
 /* deck / cemetery を縦に2つ並べるエリア */
 .side-piles {
+  /*
+  ┌────────┐
+  │ deck   │
+  ├────────┤
+  │cemetery│
+  └────────┘ */
   width: var(--field-card-width);
-
   display: grid;
-  grid-template-rows: 1fr 1fr;
-  gap: 4px;
+  grid-template-rows: 1fr 1fr; /*同じ高さで2行に分ける*/
+  gap: 4px; /*gridの行と行の間に幅を作る（上段  4px  下段）。*/
 }
 
 /* CPU側：左列にdeck/cemetery、中央列にカード置き場 */
 .cpu-field-side .side-piles {
-  grid-column: 1;
+  grid-column: 1; /*gridの1列目に置くという指定。*/
 }
 
 .cpu-field-side .card-zones {
-  grid-column: 2;
+  grid-column: 2; /*gridの2列目に置くという指定。*/
 }
 
 /* プレイヤー側：中央列にカード置き場、右列にcemetery/deck */
 .player-field-side .card-zones {
-  grid-column: 2;
+  grid-column: 2; /*gridの2列目に置くという指定。*/
 }
 
 .player-field-side .side-piles {
-  grid-column: 3;
+  grid-column: 3; /*gridの3列目に置くという指定。*/
 }
 
 /* deck / cemetery 共通 */
@@ -96,8 +105,9 @@ body {
   min-height: var(--field-card-height);
   border: 1px solid #333;
   border-radius: 6px;
-  box-sizing: border-box;
+  box-sizing: border-box; /*paddingやborderを含めて全体でwidthの幅にする。*/
 
+  /*grid1マスの中で中央に置く指定。特に枚数を表す数字を中央にしたいから使う。*/
   display: flex;
   align-items: center;
   justify-content: center;
@@ -108,7 +118,7 @@ body {
 /* deckの見た目 */
 .deck-pile {
   background: repeating-linear-gradient(
-    135deg,
+    135deg, /*これで縞模様になる。*/
     #444,
     #444 6px,
     #666 6px,
@@ -125,21 +135,32 @@ body {
 
 /* カード置き場全体。上段・下段の2行 */
 .card-zones {
+  /*
+  ┌────────────────────┐
+  │ spell field        │
+  ├────────────────────┤
+  │ follower field     │
+  └────────────────────┘ */
   display: grid;
   grid-template-rows: 1fr 1fr;
   gap: 4px;
-  min-width: 0;
+  min-width: 0; /*マス目に中身があっても、必要なら親の幅に合わせて縮んでよいという指定。*/
 }
 
 /* カードを置く1行分のエリア。横3列 */
 .field-row {
+  /*
+  ┌──────┬──────┬──────┐
+  │ 1枚目 │ 2枚目 │ 3枚目 │
+  └──────┴──────┴──────┘ */
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, 1fr); /*「grid-template-columns: 1fr 1fr 1fr;」と同じ意味。*/
   gap: 4px;
 
   min-height: 78px;
   min-width: 0;
 
+  /*Gridの各マスの中でカードを中央に置く指定。*/
   align-items: center;
   justify-items: center;
 }
@@ -152,6 +173,72 @@ body {
 
   font-size: 9px;
   line-height: 1.15;
+}
+
+/* リーダーパネル全体 */
+/*
+┌──────────────┐
+│ HP: 20       │ ← auto
+│ PP: 3 / 3    │
+│ player       │
+├──────────────┤
+│              │
+│ LEADER       │ ← 1fr
+│              │
+└──────────────┘ */
+.leader-panel {
+  width: var(--field-card-width);
+  min-height: calc(var(--field-card-height) * 2 + 4px);
+  border: 1px solid #333;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  display: grid;
+  grid-template-rows: auto 1fr;
+
+  background: #9b9a9a;
+}
+
+/* CPU側：右列に置く */
+.cpu-field-side .leader-panel {
+  grid-column: 3;
+}
+
+/* プレイヤー側：左列に置く */
+.player-field-side .leader-panel {
+  grid-column: 1;
+}
+
+/* HP / PP / 名前の部分 */
+.leader-status {
+  padding: 4px 3px;
+  border-bottom: 1px solid #333;
+  box-sizing: border-box;
+
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+.leader-status p {
+  margin: 0;
+}
+
+/* リーダー画像の枠 */
+.leader-image-frame {
+  min-height: var(--field-card-height);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #eee6d8;
+}
+
+/* 仮表示 */
+.leader-image-placeholder {
+  font-size: 9px;
+  font-weight: bold;
+  color: #666;
 }
 
 /* ==============================
@@ -232,7 +319,7 @@ body {
   text-align: center;
 }
 
-/* イラスト表示エリア */
+/* カードのイラスト表示エリア */
 .preview-card-image-area {
   width: min(70vw, 260px);
   aspect-ratio: 2 / 3;
@@ -250,14 +337,14 @@ body {
   overflow: hidden;
 }
 
-/* イラスト画像 */
+/* カードのイラスト画像 */
 #preview-card-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
-/* ステータス表示 */
+/* カードのステータス表示 */
 .preview-card-status {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -278,7 +365,7 @@ body {
   font-weight: bold;
 }
 
-/* 効果テキスト */
+/* カードの効果テキスト */
 #preview-card-text {
   margin: 0;
   padding: 12px;
@@ -304,16 +391,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-/* ステータス表示 */
-.status-area {
-  background: #9b9a9a;
-  padding: 6px;
-  margin: 0;
-  font-size: 13px;
-  border-radius: 4px;
-  line-height: 1.3;
 }
 
 /* カード1枚の見た目 */
@@ -411,11 +488,6 @@ CPU専用エリア
   .player-area {
     padding: 6px;
     gap: 4px;
-  }
-
-  .status-area {
-    padding: 4px;
-    font-size: 12px;
   }
 
   .message-area {
