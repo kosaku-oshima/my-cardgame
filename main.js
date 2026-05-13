@@ -125,18 +125,46 @@ const cards = [
 
 //メッセージエリアに表示するボタンのセット
 const messageActions = {
-    start : [
+    whenHandSelected : [
         {
             label : "場に出す",
-            onClick : resetBattleSelection,
+            onClick : playSelectedHandCard //グローバル変数に代入されたカードを場に出す。
         },
-    ],
-    battle : [
         {
             label : "キャンセル",
-            onClick : resetBattleSelection,
+            onClick : resetActionSelection
+            //↑「resetActionSelection()」と書くとクリック時でなくmessageActions作成時に処理が呼ばれるので注意。
         },
     ],
+    whenFieldSelected : [
+        {
+            label : "バトル",
+            onClick : () => {
+                //場のカードをクリックしたことで正常にグローバル変数に代入されているか確認。
+                if (!selectedAttacker) {
+                    displayMessageWithActions("攻撃するカードが選択されていません。");
+                    return;
+                }
+                //バトルモードON
+                battleMode = true;
+                selectedTarget = null;
+                displayMessageWithActions(
+                    "どのカードに攻撃するか選択してください。",
+                    messageActions.whenBattleSelected
+                ); //メッセージ表示。この後攻撃対象を選択する操作は入る。
+            }
+        },
+        {
+            label : "キャンセル",
+            onClick : resetActionSelection,
+        },
+    ],
+    whenBattleSelected : [
+        {
+            label : "キャンセル",
+            onClick : resetActionSelection,
+        },
+    ]
 }
 
 //カードプールからデッキを作る関数
@@ -263,6 +291,79 @@ function sendToCemetery(player, card) {
     console.log(`${card.name}を墓地に送りました。`);
 }
 
+//手札クリック時にカードを選択済みにする関数
+function selectHandCard(card) {
+    const player = players[0];
+    if(!isPlayerTurn()) {
+        displayMessageWithActions("相手ターン中は行動できません。");
+        return;
+    }
+    if(battleMode) {
+        displayMessageWithActions("バトル中は選択できません。");
+        return;
+    }
+    if (player.currentPp < card.cost) {
+        selectedHandCard = null;
+        displayMessageWithActions("PPが足りません。");
+        return;
+    }
+    if (player.field.length >= 3) {
+        selectedHandCard = null;
+        displayMessageWithActions("フィールドに空きがありません。");
+        return;
+    }
+    //場のカードを選んだあとに手札が選択された場合に備えリセットをかける。
+    selectedAttacker = null;
+    selectedTarget = null;
+    //選択された手札のカードをグローバル変数に代入。
+    selectedHandCard = card;
+    displayMessageWithActions(
+        `${card.name}を選択しました。`,
+        messageActions.whenHandSelected
+    );//メッセージ表示。
+}
+
+//選択した手札のカードを場に出す関数
+function playSelectedHandCard() {
+    const player = players[0];
+    const card = selectedHandCard; //selectedHandCardを別変数に退避。念のため。
+    //selectedHandCardの存在確認。
+    if(!card) {
+        console.log("まだカードが選択されていません。");
+        return;
+    }
+    //手札にselectedHandCardがあるかの確認。念のため。
+    if (!player.hand.includes(card)) {
+        selectedHandCard = null;
+        displayMessageWithActions("そのカードは手札にありません。");
+        return;
+    }
+    //相手ターンに手札がクリックされた場合のアラート表示。
+    if (!isPlayerTurn()) {
+        displayMessageWithActions("今は自分のターンではありません。");
+        return;
+    }
+    //バトル中に手札がクリックされた場合のアラート表示。
+    if (battleMode) {
+        displayMessageWithActions("バトル中は手札からカードを出せません。");
+        return;
+    }
+    //召喚実行前のPP確認
+    if (player.currentPp < card.cost) {
+        displayMessageWithActions("PPが足りません。");
+        return;
+    }
+    //フィールド上に空きがあるか確認
+    if (player.field.length >= 3) {
+        displayMessageWithActions("フィールドに空きがありません。");
+        return;
+    }
+    playCard(player, card);
+    selectedHandCard = null;
+    displayMessageWithActions(`${card.name}を場に出しました。`);
+    renderGame(players);
+}
+
 //バトル処理の関数
 function battle(attackPlayer, attacker, defendPlayer, defender) {
     if (!attacker || !defender) {
@@ -309,8 +410,9 @@ function attackLeader(attacker, targetLeader) {
 //バトル時にプレイヤーが攻撃するフォロワーを選択するための関数
 // battleMode,selectedAttacker,selectedTarget,gameMessageはグローバル変数として定義されている。
 function selectAttacker(card) {
-    //バトルボタンがクリックされ、バトルモードに入っているかを判定。
-    if (!battleMode) {
+    //相手ターン中は選択不可とする。
+    if (!isPlayerTurn()) {
+        displayMessageWithActions("今は自分のターンではありません。");
         return;
     }
     //選択されたカードが行動可能かを判定。
@@ -318,11 +420,12 @@ function selectAttacker(card) {
         displayMessageWithActions("このカードは攻撃できません。");
         return;
     }
-    selectedAttacker = card; //グローバル変数に攻撃するフォロワーを代入。
+    selectedHandCard = null;//手札をクリックしたあとに場のカードをクリックした場合に備えリセットをかける。
+    selectedAttacker = card; //グローバル変数に攻撃を行うフォロワーの候補として代入。
     displayMessageWithActions(
-        `${card.name}を選択しました。攻撃対象を選んでください。`,
-        messageActions.battle
-    ); //メッセージを表示。
+        `${card.name}を選択しました。操作を選んでください。`,
+        messageActions.whenFieldSelected
+    ); //メッセージを表示。このあとバトルするか選択する操作が入る。
 }
 
 //バトル時にプレイヤーが攻撃対象のフォロワーを選択するための関数
@@ -333,7 +436,9 @@ function selectTarget(card) {
     }
     //攻撃を行うフォロワーが選択されているかを判定。
     if (!selectedAttacker) {
-        displayMessageWithActions("先に攻撃するカードを選んでください。", messageActions.battle);
+        battleMode = false;
+        selectedTarget = null;
+        displayMessageWithActions("先に攻撃するカードを選んでください。");
         return;
     }
     selectedTarget = card; //グローバル変数に攻撃対象のフォロワーを代入。
@@ -342,7 +447,7 @@ function selectTarget(card) {
     );
     if (!result) {
         selectedTarget = null;
-        displayMessageWithActions("攻撃対象を選び直してください。", messageActions.battle);
+        displayMessageWithActions("攻撃対象を選び直してください。", messageActions.whenBattleSelected);
         return;
     }
     //バトルを実行。
@@ -358,8 +463,9 @@ function selectTarget(card) {
     renderGame(players); //HTML上の表示を更新。
 }
 
-//バトル開始後、ターゲット選択前にターンエンドされた場合にグローバル変数をリセットする関数
-function resetBattleSelection() {
+//グローバル変数をリセットする関数
+function resetActionSelection() {
+    selectedHandCard = null;
     battleMode = false;
     selectedAttacker = null;
     selectedTarget = null;
@@ -577,43 +683,14 @@ function renderCardList(cards, elementId, areaType) {
         //自分の手札を描画。
         if (areaType === "playerHand") {
             cardElement.addEventListener("click", () => {
-                const player = players[0];
-                //相手ターンに手札がクリックされた場合のアラート表示。
-                if (!isPlayerTurn()) {
-                    displayMessageWithActions("今は自分のターンではありません。");
-                    return;
-                }
-                //バトル中に手札がクリックされた場合のアラート表示。
-                if (battleMode) {
-                    displayMessageWithActions("バトル中は手札からカードを出せません。");
-                    return;
-                }
-                //召喚実行前のPP確認
-                if (player.currentPp < card.cost) {
-                    displayMessageWithActions("PPが足りません。");
-                    return;
-                }
-                //フィールド上に空きがあるか確認
-                if (player.field.length >= 3) {
-                    displayMessageWithActions("フィールドに空きがありません。");
-                    return;
-                }
-                //実行確認
-                const result = confirm(
-                    `${card.name}を召喚しますか？`
-                );
-                if (!result) {
-                    return;
-                }
-                playCard(player, card); //クリックされたカードを場に出す。
-                renderGame(players); //HTML上の表示を更新。
+                selectHandCard(card);
             });
         }
 
         //自分の場に出ているカードを描画。
         if (areaType === "playerField") {
             cardElement.addEventListener("click", () => {
-                selectAttacker(card); //クリックされたカードで攻撃する処理を行う。
+                selectAttacker(card); //クリックされたカードで攻撃するか選べるようにする。
             });
         }
 
@@ -718,31 +795,18 @@ function openCardPreview(card) {
 // ====================================
 //複数の関数で参照する値をグローバル変数として定義。
 let currentPlayerIndex = 0;
+let selectedHandCard = null;
 let battleMode = false;
 let selectedAttacker = null;
 let selectedTarget = null;
 //画面が読み込まれた時の処理
 document.addEventListener("DOMContentLoaded", async () => {
     //HTML要素を定義
-    const battleBtn = document.getElementById("battle-btn");
     const turnEndBtn = document.getElementById("turn-end-btn");
-    //バトルボタンがクリックされた時の処理
-    battleBtn.addEventListener("click", () => {
-        //相手ターン中にクリックされたらアラートを表示。
-        if (!isPlayerTurn()) {
-            displayMessageWithActions("今は自分のターンではありません。");
-            return;
-        }
-        //グローバル変数を変更。
-        battleMode = true;
-        selectedAttacker = null;
-        selectedTarget = null;
-        displayMessageWithActions("どのカードで攻撃するか選択してください。");
-    });
     //ターンエンドボタンがクリックされた時の処理
     turnEndBtn.addEventListener("click", () => {
         console.log("turn-end-btn is clicked.");
-        resetBattleSelection(); //バトルの準備中にターンが終了した場合のリセット処理。
+        resetActionSelection(); //バトルの準備中にターンが終了した場合のリセット処理。
         finishTurn();  //ターンを終了。
     });
     //カードのプレビューモーダルを閉じるボタンがクリックされた時の処理
