@@ -346,15 +346,19 @@ body {
   color: #333;
 }
 
-/* ボタンエリア */
-.buttons {
+.message-text {
+  margin-bottom: 6px;
+}
+
+/* ボタンがあるエリア */
+.buttons, .message-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
 }
 
 /* ボタン */
-.buttons button {
+.buttons button, .message-actions button {
   border: 1px solid #333;
   border-radius: 6px;
   padding: 6px 12px;
@@ -415,7 +419,8 @@ CPU専用エリア
     font-size: 12px;
   }
 
-  .buttons button {
+  .buttons button,
+  .message-actions button {
     padding: 5px 10px;
     font-size: 12px;
   }
