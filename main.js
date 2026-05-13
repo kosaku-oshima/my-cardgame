@@ -27,101 +27,155 @@ const players = [
     }
 ];
 
-//カード情報の定義
-const cards = [
+// 【テストプレイ用】プレイヤー側デッキ：バランス型
+const playerCards = [
+    { type: "follower", name: "見習い剣士", hp: 1, at: 1, cost: 1, text: "軽く出せる基本フォロワー。" },
+    { type: "follower", name: "森の弓使い", hp: 1, at: 2, cost: 1, text: "攻撃力が高いが倒されやすい。" },
+    { type: "follower", name: "小さな守り手", hp: 2, at: 1, cost: 1, text: "序盤の守りに向いたフォロワー。" },
+    { type: "follower", name: "旅する斥候", hp: 1, at: 2, cost: 1, text: "序盤から相手に圧力をかける。" },
+    { type: "follower", name: "草原の兵士", hp: 2, at: 2, cost: 2, text: "扱いやすい2コストフォロワー。" },
+  
+    { type: "follower", name: "盾を持つ兵士", hp: 3, at: 1, cost: 2, text: "体力が高く、場に残りやすい。" },
+    { type: "follower", name: "炎の魔術師", hp: 2, at: 3, cost: 2, text: "攻撃寄りの2コストフォロワー。" },
+    { type: "follower", name: "街道の槍兵", hp: 2, at: 2, cost: 2, text: "攻守のバランスがよい。" },
+    { type: "follower", name: "白銀の見習い騎士", hp: 3, at: 2, cost: 3, text: "中盤につなげる安定したフォロワー。" },
+    { type: "follower", name: "荒野の戦士", hp: 3, at: 3, cost: 3, text: "中盤の主力。" },
+  
+    { type: "follower", name: "癒しの聖職者", hp: 4, at: 2, cost: 3, text: "体力が高めで場に残りやすい。" },
+    { type: "follower", name: "双剣の冒険者", hp: 2, at: 4, cost: 3, text: "攻撃力重視の中盤フォロワー。" },
+    { type: "follower", name: "鋼の騎士", hp: 5, at: 4, cost: 4, text: "攻守ともに優秀な主力カード。" },
+    { type: "follower", name: "雷鳴の獣", hp: 4, at: 5, cost: 4, text: "相手リーダーへの攻撃力が高い。" },
+    { type: "follower", name: "城壁の番人", hp: 6, at: 3, cost: 4, text: "守りに強い大型寄りフォロワー。" },
+  
+    { type: "follower", name: "古代の守護者", hp: 7, at: 4, cost: 5, text: "高い体力で場に残りやすい。" },
+    { type: "follower", name: "紅蓮の騎士", hp: 5, at: 6, cost: 5, text: "攻撃力の高い終盤カード。" },
+    { type: "follower", name: "竜騎士", hp: 6, at: 7, cost: 6, text: "終盤の切り札。" },
+    { type: "follower", name: "森の大守護獣", hp: 8, at: 6, cost: 6, text: "攻守に優れた大型フォロワー。" },
+    { type: "follower", name: "天空の勇者", hp: 8, at: 8, cost: 7, text: "勝負を決める大型フォロワー。" },
+  ];
+  
+  // 【テストプレイ用】CPU側デッキ：やや攻撃寄り
+  const cpuCards = [
+    { type: "follower", name: "ゴブリン", hp: 1, at: 1, cost: 1, text: "軽く出せる基本フォロワー。" },
+    { type: "follower", name: "グレムリン", hp: 1, at: 2, cost: 1, text: "攻撃力が高い序盤フォロワー。" },
+    { type: "follower", name: "影の小鬼", hp: 1, at: 2, cost: 1, text: "序盤から攻めるフォロワー。" },
+    { type: "follower", name: "骨の兵士", hp: 2, at: 1, cost: 1, text: "少しだけ場持ちする低コストカード。" },
+    { type: "follower", name: "荒くれ山賊", hp: 2, at: 2, cost: 2, text: "攻めやすい2コストフォロワー。" },
+  
+    { type: "follower", name: "毒爪の獣", hp: 1, at: 3, cost: 2, text: "攻撃力は高いが倒されやすい。" },
+    { type: "follower", name: "黒鉄の斧使い", hp: 3, at: 2, cost: 2, text: "安定した2コストフォロワー。" },
+    { type: "follower", name: "砂漠の盗賊", hp: 2, at: 3, cost: 2, text: "序盤から強く攻める。" },
+    { type: "follower", name: "魔狼", hp: 3, at: 3, cost: 3, text: "中盤の攻撃役。" },
+    { type: "follower", name: "暗黒の槍兵", hp: 2, at: 4, cost: 3, text: "攻撃力重視の中盤フォロワー。" },
+  
+    { type: "follower", name: "岩肌の巨人", hp: 5, at: 2, cost: 3, text: "高い体力で場に残る。" },
+    { type: "follower", name: "狂える戦士", hp: 3, at: 4, cost: 3, text: "攻撃寄りの中盤カード。" },
+    { type: "follower", name: "地獄の番犬", hp: 4, at: 5, cost: 4, text: "攻撃力の高い主力カード。" },
+    { type: "follower", name: "黒鎧の騎士", hp: 5, at: 4, cost: 4, text: "攻守のバランスがよい。" },
+    { type: "follower", name: "魔導ゴーレム", hp: 6, at: 3, cost: 4, text: "守りに強い中型フォロワー。" },
+  
+    { type: "follower", name: "雷角の獣", hp: 5, at: 6, cost: 5, text: "終盤に相手を追い詰める。" },
+    { type: "follower", name: "深淵の守護者", hp: 7, at: 4, cost: 5, text: "高い体力を持つ大型フォロワー。" },
+    { type: "follower", name: "炎獄の竜", hp: 5, at: 7, cost: 6, text: "攻撃力の高い大型フォロワー。" },
+    { type: "follower", name: "闇の巨兵", hp: 8, at: 6, cost: 6, text: "終盤の主力。" },
+    { type: "follower", name: "魔王の使い", hp: 7, at: 9, cost: 7, text: "放置すると危険な切り札。" },
+  ];
+
+//カード情報の定義　※CPUなど複数用意する場合はこれが必要になると思われる。
+// const cards = [
     //followerのみデッキ作成時に時にisInactivated(true=行動不能)を付与する。
-    {
-        type : "follower", //follower,spell,amuletの3種を実装予定
-        name : "エルフの剣士",
-        hp : 1, //hit point
-        at : 1, //attack point
-        cost : 1, //召喚コスト
-    },
-    {
-        type : "follower",
-        name : "砦を守る翼竜",
-        hp : 2,
-        at : 1,
-        cost : 1,
-    },
-    {
-        type : "follower",
-        name : "グレムリン",
-        hp : 5,
-        at : 2,
-        cost : 1,
-    },
-    {
-        type: "follower",
-        name: "見習い剣士",
-        hp: 1,
-        at: 1,
-        cost: 1,
-    },
-    {
-        type: "follower",
-        name: "森の弓使い",
-        hp: 1,
-        at: 2,
-        cost: 1,
-    },
-    {
-        type: "follower",
-        name: "盾を持つ兵士",
-        hp: 3,
-        at: 1,
-        cost: 2,
-    },
-    {
-        type: "follower",
-        name: "炎の魔術師",
-        hp: 2,
-        at: 3,
-        cost: 2,
-    },
-    {
-        type: "follower",
-        name: "荒野の戦士",
-        hp: 3,
-        at: 3,
-        cost: 3,
-    },
-    {
-        type: "follower",
-        name: "癒しの聖職者",
-        hp: 4,
-        at: 2,
-        cost: 3,
-    },
-    {
-        type: "follower",
-        name: "鋼の騎士",
-        hp: 5,
-        at: 4,
-        cost: 4,
-    },
-    {
-        type: "follower",
-        name: "雷鳴の獣",
-        hp: 4,
-        at: 5,
-        cost: 4,
-    },
-    {
-        type: "follower",
-        name: "古代の守護者",
-        hp: 7,
-        at: 4,
-        cost: 5,
-    },
-    {
-        type: "follower",
-        name: "竜騎士",
-        hp: 6,
-        at: 7,
-        cost: 6,
-    },
-];
+    // {
+        // type : "follower", //follower,spell,amuletの3種を実装予定
+        // name : "エルフの剣士",
+        // hp : 1, //hit point
+        // at : 1, //attack point
+        // cost : 1, //召喚コスト
+//     },
+//     {
+//         type : "follower",
+//         name : "砦を守る翼竜",
+//         hp : 2,
+//         at : 1,
+//         cost : 1,
+//     },
+//     {
+//         type : "follower",
+//         name : "グレムリン",
+//         hp : 5,
+//         at : 2,
+//         cost : 1,
+//     },
+//     {
+//         type: "follower",
+//         name: "見習い剣士",
+//         hp: 1,
+//         at: 1,
+//         cost: 1,
+//     },
+//     {
+//         type: "follower",
+//         name: "森の弓使い",
+//         hp: 1,
+//         at: 2,
+//         cost: 1,
+//     },
+//     {
+//         type: "follower",
+//         name: "盾を持つ兵士",
+//         hp: 3,
+//         at: 1,
+//         cost: 2,
+//     },
+//     {
+//         type: "follower",
+//         name: "炎の魔術師",
+//         hp: 2,
+//         at: 3,
+//         cost: 2,
+//     },
+//     {
+//         type: "follower",
+//         name: "荒野の戦士",
+//         hp: 3,
+//         at: 3,
+//         cost: 3,
+//     },
+//     {
+//         type: "follower",
+//         name: "癒しの聖職者",
+//         hp: 4,
+//         at: 2,
+//         cost: 3,
+//     },
+//     {
+//         type: "follower",
+//         name: "鋼の騎士",
+//         hp: 5,
+//         at: 4,
+//         cost: 4,
+//     },
+//     {
+//         type: "follower",
+//         name: "雷鳴の獣",
+//         hp: 4,
+//         at: 5,
+//         cost: 4,
+//     },
+//     {
+//         type: "follower",
+//         name: "古代の守護者",
+//         hp: 7,
+//         at: 4,
+//         cost: 5,
+//     },
+//     {
+//         type: "follower",
+//         name: "竜騎士",
+//         hp: 6,
+//         at: 7,
+//         cost: 6,
+//     },
+// ];
 
 //メッセージエリアに表示するボタンのセット
 const messageActions = {
@@ -626,10 +680,12 @@ function finishGame(winner) {
 //ゲーム開始時の処理
 function startGame(players) {
     console.log("ゲームを始めます。");
-    createDeck(players[0], cards); //デッキを作成
+    // createDeck(players[0], cards); //本番用のデッキ作成処理。テスト中はコメントアウト
+    createDeck(players[0], playerCards); //テスト用のデッキ作詞処理
     shuffleDeck(players[0].deck); //デッキをシャッフル
     createInitialHand(players[0]); //初期手札４枚を引く
-    createDeck(players[1], cards);
+    // createDeck(players[1], cards); //本番用のデッキ作成処理。テスト中はコメントアウト
+    createDeck(players[1], cpuCards); //テスト用のデッキ作詞処理
     shuffleDeck(players[1].deck);
     createInitialHand(players[1]);
 }
