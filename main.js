@@ -644,6 +644,10 @@ function finishGame(winner) {
     if (!winner) {
         return;
     }
+
+    // 開いているカードプレビューがあれば閉じる
+    closeCardPreview();
+
     //グローバル変数の変更
     isGameOver = true;
     battleMode = false;
@@ -949,6 +953,9 @@ function renderDeckCemeteryCount(player, cpu) {
 
 //カードのプレビューモーダルを開く関数
 function openCardPreview(card) {
+    if (isGameOver) {
+        return;
+    } //ゲームが終わっていたらモーダルを開く処理を行わない。
     const modal = document.getElementById("card-preview-modal");
     document.getElementById("preview-card-name").textContent = card.name;
     document.getElementById("preview-card-cost").textContent = card.cost;
