@@ -662,6 +662,13 @@ function finishGame(winner) {
     renderGame(players);
 }
 
+//処理に待ち時間を入れるための関数。ターン進行のスピード調節などに使う。
+function wait(ms) {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  }
+
 //テストで使う確認用の関数
 // function showPlayerState(player) {
 //     console.log(`=== ${player.name}の状態 ===`);
@@ -698,11 +705,12 @@ function startGame(players) {
 }
 
 //【フェーズ管理】ターン開始時の処理
-function startPhase(player) {
+async function startPhase(player) {
     if (isGameOver) {
         return;
     } //何らかの理由でゲームが終わっていた場合に備えた処理。
     console.log(`${player.name}のターンを始めます。`);
+    displayMessageWithActions(`${player.name}のターンを始めます。`);
     recoveryPp(player); //PP上限+1＆回復する。
     activateFollower(player.field); //場のフォロワーを行動可能にする。
 
@@ -714,17 +722,26 @@ function startPhase(player) {
         return;
     }
     renderGame(players); //HTMLの表示を更新する。
+
+    //一定時間を置いてからメッセージエリアにメッセージを表示する。
+    if (player.name === "player") {
+        await wait(TURN_MESSAGE_WAIT);
+        if (isGameOver) {
+            return;
+        }
+        displayMessageWithActions("操作を選んでください。");
+    }
 }
 
 //【フェーズ管理】メインフェイズ（行動）の処理
-function mainPhase(player, opponentPlayer) {
+async function mainPhase(player, opponentPlayer) {
     console.log(`${player.name}のメインフェイズを始めます。`);
     //CPUのターンは自動で行動。
     if (player.name === "cpu") {
         // cpuAction(player, opponentPlayer);
         
         //テストプレイ用にChatGPTが作った強いcpuActionを呼び出す。
-        cpuAction(player, opponentPlayer, {
+        await cpuAction(player, opponentPlayer, {
             players,
             isGameOver: () => isGameOver,
             playCard,
@@ -732,8 +749,9 @@ function mainPhase(player, opponentPlayer) {
             attackLeader,
             renderGame,
             displayMessageWithActions,
+            wait
           });
-        finishTurn();
+        await finishTurn();
     }
 }
 
@@ -779,7 +797,7 @@ function endPhase(player) {
 // 各フェーズの呼び出し方を制御する関数を記述
 // --------------------------------------------------------
 //スタートフェイズ、メインフェイズ
-function turnCycle() {
+async function turnCycle() {
     // 前の相手ターンでゲームが終了していたら次のターンは行わない
     if (isGameOver) {
         return;
@@ -787,17 +805,17 @@ function turnCycle() {
     const currentPlayer = getCurrentPlayer();
     const currentOpponentPlayer = getOpponentPlayer();
     //スタートフェイズ
-    startPhase(currentPlayer);
+    await startPhase(currentPlayer);
     //自分のスタートフェイズでデッキアウトによりゲームが終わったらその時点で処理をやめる。
     if (isGameOver) {
         return;
     }
     //メインフェイズ
-    mainPhase(currentPlayer, currentOpponentPlayer);
+    await mainPhase(currentPlayer, currentOpponentPlayer);
 }
 
 //エンドフェイズへの移行はプレイヤーの操作を待ってからになるため別関数で定義
-function finishTurn() {
+async function finishTurn() {
     if (isGameOver) {
         return;
     } //何かしらの理由でゲームが終わっていた場合に備えた処理。
@@ -806,7 +824,7 @@ function finishTurn() {
     if (isGameOver) {
         return;
     } //エンドフェイズで何かしらの理由でゲームが終わった場合に備えた処理。
-    turnCycle(); //相手ターンを行う。
+    await turnCycle(); //相手ターンを行う。
 }
 
 // ====================================
@@ -992,24 +1010,27 @@ let battleMode = false;
 let selectedAttacker = null;
 let selectedTarget = null;
 let isGameOver = false;
+//処理の待ち時間を決める定数
+const TURN_MESSAGE_WAIT = 900;
+
 //画面が読み込まれた時の処理
 document.addEventListener("DOMContentLoaded", async () => {
     //HTML要素を定義
     const turnEndBtn = document.getElementById("turn-end-btn");
     //ターンエンドボタンがクリックされた時の処理
-    turnEndBtn.addEventListener("click", () => {
+    turnEndBtn.addEventListener("click", async () => {
         if (isGameOver) {
             return;
         } //何らかの理由でゲームが終わっていた場合に備えた処理。
         console.log("turn-end-btn is clicked.");
         resetActionSelection(); //バトルの準備中にターンが終了した場合のリセット処理。
-        finishTurn();  //ターンを終了。
+        await finishTurn();  //ターンを終了。
     });
     //カードのプレビューモーダルを閉じるボタンがクリックされた時の処理
     document.getElementById("close-card-preview-button").addEventListener("click", closeCardPreview);
 
     startGame(players); //ゲーム開始。
-    turnCycle(); //ターン処理。
+    await turnCycle(); //ターン処理。
     renderGame(players); //画面描画。
 });
 

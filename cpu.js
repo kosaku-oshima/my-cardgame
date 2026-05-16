@@ -1,6 +1,10 @@
 // cpu.js
 
-export function cpuAction(cpu, opponentPlayer, helpers) {
+//待ち時間の定数。CPUのターンのスピードはこの定数で調節する。
+const CPU_WAIT_SHORT = 800;
+const CPU_WAIT_NORMAL = 1200;
+
+export async function cpuAction(cpu, opponentPlayer, helpers) {
     const {
       players,
       isGameOver,
@@ -9,6 +13,7 @@ export function cpuAction(cpu, opponentPlayer, helpers) {
       attackLeader,
       renderGame,
       displayMessageWithActions,
+      wait,
     } = helpers;
   
     if (cpu.name !== "cpu") {
@@ -19,8 +24,6 @@ export function cpuAction(cpu, opponentPlayer, helpers) {
     if (isGameOver()) {
       return;
     }
-  
-    console.log("CPUの強化AIを実行します。");
   
     function getAt(card) {
       return card.currentAt ?? card.at ?? 0;
@@ -94,48 +97,54 @@ export function cpuAction(cpu, opponentPlayer, helpers) {
       return bestCards;
     }
   
-    function playBestCards() {
+    async function playBestCards() {
       while (true) {
         if (isGameOver()) {
           return;
         }
-  
+    
         if (cpu.field.length >= 3) {
           return;
         }
-  
+    
         const cardsToPlay = chooseBestCardsToPlay();
-  
+    
         if (cardsToPlay.length === 0) {
           return;
         }
-  
+    
         let playedAnyCard = false;
-  
-        cardsToPlay.forEach(card => {
+    
+        for (const card of cardsToPlay) {
           if (isGameOver()) {
             return;
           }
-  
+    
           if (!cpu.hand.includes(card)) {
-            return;
+            continue;
           }
-  
+    
           if (cpu.currentPp < card.cost) {
-            return;
+            continue;
           }
-  
+    
           if (cpu.field.length >= 3) {
             return;
           }
-  
+    
+          displayMessageWithActions(`CPUは「${card.name}」を場に出します。`);
+          await wait(CPU_WAIT_NORMAL);
+    
           playCard(cpu, card);
           console.log(`CPUは${card.name}を場に出しました。`);
           playedAnyCard = true;
-        });
-  
+    
+          renderGame(players);
+          await wait(CPU_WAIT_SHORT);
+        }
+    
         renderGame(players);
-  
+    
         if (!playedAnyCard) {
           return;
         }
@@ -265,33 +274,43 @@ export function cpuAction(cpu, opponentPlayer, helpers) {
       return bestMove;
     }
   
-    function attackBestTargets() {
+    async function attackBestTargets() {
       while (true) {
         if (isGameOver()) {
           return;
         }
-  
+    
         const move = chooseBestAttack();
-  
+    
         if (!move) {
           return;
         }
-  
+    
         if (move.type === "leader") {
+          displayMessageWithActions(`CPUの「${move.attacker.name}」がプレイヤーリーダーを攻撃します。`);
+          await wait(CPU_WAIT_NORMAL);
+    
           console.log(`CPUは${move.attacker.name}でプレイヤーリーダーを攻撃します。`);
           attackLeader(move.attacker, opponentPlayer);
           renderGame(players);
-  
+    
+          await wait(CPU_WAIT_SHORT);
+    
           if (isGameOver()) {
             return;
           }
         }
-  
+    
         if (move.type === "follower") {
+          displayMessageWithActions(`CPUの「${move.attacker.name}」が「${move.target.name}」を攻撃します。`);
+          await wait(CPU_WAIT_NORMAL);
+    
           console.log(`CPUは${move.attacker.name}で${move.target.name}を攻撃します。`);
           battle(cpu, move.attacker, opponentPlayer, move.target);
           renderGame(players);
-  
+    
+          await wait(CPU_WAIT_SHORT);
+    
           if (isGameOver()) {
             return;
           }
@@ -299,24 +318,29 @@ export function cpuAction(cpu, opponentPlayer, helpers) {
       }
     }
   
-    playBestCards();
-  
+    renderGame(players);
+    await wait(CPU_WAIT_NORMAL);
+
+    await playBestCards();
+
     if (isGameOver()) {
       return;
     }
-  
-    attackBestTargets();
-  
+
+    await attackBestTargets();
+
     if (isGameOver()) {
       return;
     }
-  
-    playBestCards();
-  
+
+    await playBestCards();
+
     if (isGameOver()) {
       return;
     }
-  
+
     displayMessageWithActions("CPUの行動が終了しました。");
     renderGame(players);
+    await wait(CPU_WAIT_SHORT);
+
   }
