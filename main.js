@@ -639,6 +639,33 @@ function switchTurn() {
     currentPlayerIndex = currentPlayerIndex === 0 ? 1 : 0;
 }
 
+// 手札にプレイできるカードがあるか判定する関数
+function hasPlayableHandCard(player) {
+    const fieldMaxLength = 3;
+    if (player.field.length >= fieldMaxLength) {
+        return false;
+    }
+    return player.hand.some(card => card.cost <= player.currentPp);
+}
+
+// 場に行動可能なフォロワーがあるか判定する関数
+function hasActivatedCard(player) {
+    return player.field.some(card =>
+        card.type === "follower" &&
+        card.isInactivated === false
+    );
+}
+
+// ターンエンド時にまだ行動できるかどうか判定する関数
+function canTakeAction(player) {
+    if (hasPlayableHandCard(player) || hasActivatedCard(player)) {
+        console.log("まだ行動可能です。");
+        return true;
+    }
+    console.log("このターンはもう行動できません。");
+    return false;
+}
+
 //ゲーム終了時の処理
 function finishGame(winner) {
     if (!winner) {
@@ -1015,17 +1042,35 @@ const TURN_MESSAGE_WAIT = 900;
 
 //画面が読み込まれた時の処理
 document.addEventListener("DOMContentLoaded", async () => {
-    //HTML要素を定義
+    //HTML要素を定義。
     const turnEndBtn = document.getElementById("turn-end-btn");
+    //playerが持つ変数を後で使うための定義。
+    const player = players[0];
+    
     //ターンエンドボタンがクリックされた時の処理
     turnEndBtn.addEventListener("click", async () => {
         if (isGameOver) {
             return;
         } //何らかの理由でゲームが終わっていた場合に備えた処理。
+        if (!isPlayerTurn()) {
+            displayMessageWithActions("今は自分のターンではありません。");
+            return;
+        } //相手ターン中にターンエンドボタンがクリックされた場合の処理。
+
         console.log("turn-end-btn is clicked.");
+
+        //手札から出せるカードがある、または場に攻撃できるフォロワーがいるときは確認を出す。
+        if (canTakeAction(player)) {
+            const result = confirm("まだ行動可能ですが、ターンを終了しますか？");
+            if (!result) {
+                return;
+            }
+        }   
         resetActionSelection(); //バトルの準備中にターンが終了した場合のリセット処理。
         await finishTurn();  //ターンを終了。
+        
     });
+
     //カードのプレビューモーダルを閉じるボタンがクリックされた時の処理
     document.getElementById("close-card-preview-button").addEventListener("click", closeCardPreview);
 
