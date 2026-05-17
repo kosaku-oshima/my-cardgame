@@ -5,6 +5,7 @@ import { cpuAction } from "./cpu.js";
 // ◆ Model ◆
 // ====================================
 //プレイヤー情報の定義
+const FIELD_MAX_LENGTH = 3; //playersのfield初期値に使うグローバル定数
 const players = [
     {
         name : "player",
@@ -13,7 +14,7 @@ const players = [
         currentPp : 0,
         deck : [],
         hand : [],
-        field : [],
+        field: Array(FIELD_MAX_LENGTH).fill(null), //位置情報管理のため枠をnullで埋める。
         cemetery : [],
         playOrder : 0,
     },
@@ -24,7 +25,7 @@ const players = [
         currentPp : 0,
         deck : [],
         hand : [],
-        field : [],
+        field: Array(FIELD_MAX_LENGTH).fill(null), //位置情報管理のため枠をnullで埋める。
         cemetery : [],
         playOrder : 1,
     }
@@ -277,11 +278,13 @@ function recoveryPp (player) {
 
 //場のfollowerカードをすべて活性化（行動可能状態）する関数
 function activateFollower(field) {
-    if (field.length === 0) {
+    //null以外の場のカードを取得する。
+    const fieldCards = field.filter(card => card !== null);
+    if (fieldCards.length === 0) {
         console.log("フィールドにカードがないためactiveFollowerは無効です。");
         return;
     }
-    field.forEach(card => {
+    fieldCards.forEach(card => {
         if (card.type !== "follower") {
             console.log(`${card.name}はフォロワーではありません。`);
             return;
@@ -326,13 +329,13 @@ function drawCard(player) {
 
 //手札から場にカードを出す関数
 function playCard (player, card) {
-    const fieldMaxLength = 3; //場には最大３枚までカードを出せる。
     const cardIndex = player.hand.indexOf(card);
     if (player.currentPp < card.cost) {
         displayMessageWithActions("PPが足りません");
         return;
     }
-    if (player.field.length >= fieldMaxLength) {
+    const emptyIndex = player.field.findIndex(fieldCard => fieldCard === null);
+    if (emptyIndex === -1) {
         displayMessageWithActions("フィールドに空きがありません");
         return;
     }
@@ -341,7 +344,7 @@ function playCard (player, card) {
       return;
     }
     player.hand.splice(cardIndex, 1); //手札から対象のカードを削除。
-    player.field.push(card); //場にカードを追加。
+    player.field[emptyIndex] = card; //場にカードを追加。空いている枠に一番左に入る想定。
     player.currentPp -= card.cost;
     console.log(`${card.name}を場に出しました`);
 }
@@ -353,8 +356,8 @@ function sendToCemetery(player, card) {
         console.log(`${card.name}はフィールドに存在しません。`);
         return;
     }
-    player.field.splice(cardIndex, 1); //場から対象のカードを削除
-    player.cemetery.push(card); //墓地に対象のカードを追加
+    player.field[cardIndex] = null; //場から対象のカードを削除。
+    player.cemetery.push(card); //墓地に対象のカードを追加。
     console.log(`${card.name}を墓地に送りました。`);
 }
 
@@ -377,7 +380,7 @@ function selectHandCard(card) {
         displayMessageWithActions("PPが足りません。");
         return;
     }
-    if (player.field.length >= 3) {
+    if (!player.field.includes(null)) {
         selectedHandCard = null;
         displayMessageWithActions("フィールドに空きがありません。");
         return;
@@ -429,7 +432,7 @@ function playSelectedHandCard() {
         return;
     }
     //フィールド上に空きがあるか確認
-    if (player.field.length >= 3) {
+    if (!player.field.includes(null)) {
         displayMessageWithActions("フィールドに空きがありません。");
         return;
     }
@@ -641,8 +644,7 @@ function switchTurn() {
 
 // 手札にプレイできるカードがあるか判定する関数
 function hasPlayableHandCard(player) {
-    const fieldMaxLength = 3;
-    if (player.field.length >= fieldMaxLength) {
+    if (!player.field.includes(null)) {
         return false;
     }
     return player.hand.some(card => card.cost <= player.currentPp);
@@ -651,6 +653,7 @@ function hasPlayableHandCard(player) {
 // 場に行動可能なフォロワーがあるか判定する関数
 function hasActivatedCard(player) {
     return player.field.some(card =>
+        card && //field内のnullをとばす処理。
         card.type === "follower" &&
         card.isInactivated === false
     );
@@ -896,6 +899,14 @@ function renderCardList(cards, elementId, areaType) {
 
     cards.forEach((card) => {
         const cardElement = document.createElement("div"); //divタグを用意。
+
+        //nullがあった場合は空に見せるためのDOM要素を作成。
+        if (card === null) {
+            cardElement.className = "card empty-card-slot";
+            area.appendChild(cardElement);
+            return;
+        }
+
         cardElement.className = "card"; //クラス名を指定。
         cardElement.innerHTML = `
         <div><strong>${card.name}</strong></div>
@@ -1038,7 +1049,7 @@ let selectedAttacker = null;
 let selectedTarget = null;
 let isGameOver = false;
 //処理の待ち時間を決める定数
-const TURN_MESSAGE_WAIT = 900;
+const TURN_MESSAGE_WAIT = 1200;
 
 //画面が読み込まれた時の処理
 document.addEventListener("DOMContentLoaded", async () => {
@@ -1061,7 +1072,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         //手札から出せるカードがある、または場に攻撃できるフォロワーがいるときは確認を出す。
         if (canTakeAction(player)) {
-            const result = confirm("まだ行動可能ですが、ターンを終了しますか？");
+            const result = confirm("まだ行動は可能です。ターンを終了しますか？");
             if (!result) {
                 return;
             }

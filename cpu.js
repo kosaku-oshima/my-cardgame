@@ -42,8 +42,7 @@ export async function cpuAction(cpu, opponentPlayer, helpers) {
     }
   
     function chooseBestCardsToPlay() {
-      const fieldMaxLength = 3;
-      const emptySlots = fieldMaxLength - cpu.field.length;
+      const emptySlots = cpu.field.filter(card => card === null).length;
   
       if (emptySlots <= 0) {
         return [];
@@ -103,7 +102,7 @@ export async function cpuAction(cpu, opponentPlayer, helpers) {
           return;
         }
     
-        if (cpu.field.length >= 3) {
+        if (!cpu.field.includes(null)) {
           return;
         }
     
@@ -128,7 +127,7 @@ export async function cpuAction(cpu, opponentPlayer, helpers) {
             continue;
           }
     
-          if (cpu.field.length >= 3) {
+          if (!cpu.field.includes(null)) {
             return;
           }
     
@@ -153,7 +152,9 @@ export async function cpuAction(cpu, opponentPlayer, helpers) {
   
     function getAttackableCards() {
       return cpu.field.filter(card => {
-        return card.type === "follower" && card.isInactivated === false;
+        return card && //field内のnullは飛ばして処理する。
+          card.type === "follower" &&
+          card.isInactivated === false;
       });
     }
   
@@ -193,9 +194,12 @@ export async function cpuAction(cpu, opponentPlayer, helpers) {
         const attackerValue = getCardValue(attacker);
   
         opponentPlayer.field.forEach(defender => {
+          if (!defender) {
+            return;
+          } //field内のnullは飛ばす。
           if (defender.type !== "follower") {
             return;
-          }
+          } //フォロワー以外も飛ばす。
   
           const defenderValue = getCardValue(defender);
           const defenderDies = canDefeat(attacker, defender);
@@ -248,6 +252,10 @@ export async function cpuAction(cpu, opponentPlayer, helpers) {
         }
   
         const opponentThreat = opponentPlayer.field.reduce((sum, card) => {
+          if (!card) {
+            return sum;
+          }
+        
           return sum + getAt(card);
         }, 0);
   
@@ -257,7 +265,7 @@ export async function cpuAction(cpu, opponentPlayer, helpers) {
           leaderAttackScore -= opponentThreat * 0.3;
         }
   
-        if (opponentPlayer.field.length === 0) {
+        if (opponentPlayer.field.every(card => card === null)) {
           leaderAttackScore += 8;
         }
   

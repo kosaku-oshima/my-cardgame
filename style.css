@@ -406,6 +406,13 @@ body {
   background: #fff;
 }
 
+/* フィールド内でnullになっている場所は枠のみ表示する。上書き防止で.cardの後に置く。 */
+.card.empty-card-slot {
+  border: 1px dashed #aaa;
+  background: rgba(255, 255, 255, 0.25);
+  opacity: 0.6;
+}
+
 /* ==============================
 プレイヤー専用エリア
 ============================== */
