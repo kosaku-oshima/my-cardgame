@@ -16,7 +16,7 @@ const players = [
         hand : [],
         field: Array(FIELD_MAX_LENGTH).fill(null), //位置情報管理のため枠をnullで埋める。
         cemetery : [],
-        playOrder : 0,
+        playOrder : null,
     },
     {
         name : "cpu",
@@ -27,7 +27,7 @@ const players = [
         hand : [],
         field: Array(FIELD_MAX_LENGTH).fill(null), //位置情報管理のため枠をnullで埋める。
         cemetery : [],
-        playOrder : 1,
+        playOrder : null,
     }
 ];
 
@@ -251,6 +251,26 @@ function createDeck(player, cards) {
         console.log("デッキを作成しました。");
         console.table(player.deck);
     }
+}
+
+//先攻後攻をランダムで決める関数
+function shufflePlayOrder(players) {
+    // 0ならplayer先攻、1ならcpu先攻
+    // 仕組み
+    // (1)Math.random():0以上1未満のランダムな小数（例: 0.45）を生成します。
+    // (2)* 2:生成された数値に2を掛けます。これで結果は0以上2未満になります。
+    // (3)Math.floor(): 小数点を切り捨てて、最も近い整数にします。この処理により結果が必ず 0 か 1 のどちらかになります。
+    const firstPlayerIndex = Math.floor(Math.random() * 2);
+    const secondPlayerIndex = firstPlayerIndex === 0 ? 1 : 0;
+
+    players[firstPlayerIndex].playOrder = 0;  // 先攻
+    players[secondPlayerIndex].playOrder = 1; // 後攻
+
+    // 実際のターン開始プレイヤーにも反映する
+    currentPlayerIndex = firstPlayerIndex;
+
+    console.log(`${players[firstPlayerIndex].name}が先攻です。`);
+    console.log(`${players[secondPlayerIndex].name}が後攻です。`);
 }
 
 //デッキをシャッフルする関数
@@ -722,8 +742,22 @@ function wait(ms) {
 //ゲームの進行状況、フェーズごとの処理を記述
 // --------------------------------------------------------
 //ゲーム開始時の処理
-function startGame(players) {
+async function startGame(players) {
     console.log("ゲームを始めます。");
+    displayMessageWithActions("ゲームを始めます。"); //開始メッセージ。
+    await wait(TURN_MESSAGE_WAIT);
+
+    displayMessageWithActions("先攻後攻を決めています。");
+    await wait(TURN_MESSAGE_WAIT);
+
+    shufflePlayOrder(players); // 先攻後攻を決める処理。
+    if (players[0].playOrder === 0) {
+        displayMessageWithActions("あなたは先攻です。");
+    } else {
+        displayMessageWithActions("あなたは後攻です。");
+    } //メッセージ表示。
+    await wait(TURN_MESSAGE_WAIT);
+
     // createDeck(players[0], cards); //本番用のデッキ作成処理。テスト中はコメントアウト
     createDeck(players[0], playerCards); //テスト用のデッキ作詞処理
     shuffleDeck(players[0].deck); //デッキをシャッフル
@@ -1085,7 +1119,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     //カードのプレビューモーダルを閉じるボタンがクリックされた時の処理
     document.getElementById("close-card-preview-button").addEventListener("click", closeCardPreview);
 
-    startGame(players); //ゲーム開始。
+    await startGame(players); //ゲーム開始。
     await turnCycle(); //ターン処理。
     renderGame(players); //画面描画。
 });
