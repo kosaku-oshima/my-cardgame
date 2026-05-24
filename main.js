@@ -56,6 +56,27 @@ const playerCards = [
     { type: "follower", name: "竜騎士", hp: 6, at: 7, cost: 6, text: "終盤の切り札。" },
     { type: "follower", name: "森の大守護獣", hp: 8, at: 6, cost: 6, text: "攻守に優れた大型フォロワー。" },
     { type: "follower", name: "天空の勇者", hp: 8, at: 8, cost: 7, text: "勝負を決める大型フォロワー。" },
+    {
+        name: "火球",
+        type: "spell",
+        cost: 2,
+        effectKey: "damageEnemyLeader",
+        effectValue: 3
+    },
+    {
+        name: "癒しの光",
+        type: "spell",
+        cost: 1,
+        effectKey: "healOwnLeader",
+        effectValue: 3
+    },
+    {
+        name: "知恵の書",
+        type: "spell",
+        cost: 1,
+        effectKey: "drawCard",
+        effectValue: 1
+    },
   ];
   
   // 【テストプレイ用】CPU側デッキ：やや攻撃寄り
@@ -83,7 +104,59 @@ const playerCards = [
     { type: "follower", name: "炎獄の竜", hp: 5, at: 7, cost: 6, text: "攻撃力の高い大型フォロワー。" },
     { type: "follower", name: "闇の巨兵", hp: 8, at: 6, cost: 6, text: "終盤の主力。" },
     { type: "follower", name: "魔王の使い", hp: 7, at: 9, cost: 7, text: "放置すると危険な切り札。" },
-  ];
+    {
+        name: "火球",
+        type: "spell",
+        cost: 2,
+        effectKey: "damageEnemyLeader",
+        effectValue: 3
+    },
+    {
+        name: "癒しの光",
+        type: "spell",
+        cost: 1,
+        effectKey: "healOwnLeader",
+        effectValue: 3
+    },
+    {
+        name: "知恵の書",
+        type: "spell",
+        cost: 1,
+        effectKey: "drawCard",
+        effectValue: 1
+    },
+];
+
+//spellの効果一覧
+const spellEffects = {
+    damageEnemyLeader: function(card, player, opponent) {
+        opponent.hp -= card.effectValue;
+
+        if (opponent.hp < 0) {
+        opponent.hp = 0;
+        }
+
+        displayMessageWithActions(`${card.name}を使いました。${opponent.name}に${card.effectValue}ダメージ！`);
+    },
+
+    healOwnLeader: function(card, player, opponent) {
+        player.hp += card.effectValue;
+
+        if (player.hp > 20) {
+        player.hp = 20;
+        }
+
+        displayMessageWithActions(`${card.name}を使いました。${player.name}のHPを${card.effectValue}回復！`);
+    },
+
+    drawCard: function(card, player, opponent) {
+        for (let i = 0; i < card.effectValue; i++) {
+        drawCard(player);
+        }
+
+        displayMessageWithActions(`${card.name}を使いました。カードを${card.effectValue}枚引きました。`);
+    },
+};
 
 //カード情報の定義　※CPUなど複数用意する場合はこれが必要になると思われる。
 // const cards = [
@@ -183,10 +256,21 @@ const playerCards = [
 
 //メッセージエリアに表示するボタンのセット
 const messageActions = {
-    whenHandSelected : [
+    whenFollowerHandSelected : [
         {
             label : "場に出す",
-            onClick : playSelectedHandCard //グローバル変数に代入されたカードを場に出す。
+            onClick : playSelectedFollower //グローバル変数に代入されたカードを場に出す。
+        },
+        {
+            label : "キャンセル",
+            onClick : resetActionSelection
+            //↑「resetActionSelection()」と書くとクリック時でなくmessageActions作成時に処理が呼ばれるので注意。
+        },
+    ],
+    whenSpellHandSelected : [
+        {
+            label : "詠唱",
+            onClick : playSelectedSpell
         },
         {
             label : "キャンセル",
@@ -348,12 +432,13 @@ function drawCard(player) {
 }
 
 //手札から場にカードを出す関数
-function playCard (player, card) {
+function moveHandToField (player, card) {
     const cardIndex = player.hand.indexOf(card);
     if (player.currentPp < card.cost) {
         displayMessageWithActions("PPが足りません");
         return;
     }
+
     const emptyIndex = player.field.findIndex(fieldCard => fieldCard === null);
     if (emptyIndex === -1) {
         displayMessageWithActions("フィールドに空きがありません");
@@ -363,14 +448,15 @@ function playCard (player, card) {
         displayMessageWithActions("そのカードは手札にありません");
       return;
     }
+
     player.hand.splice(cardIndex, 1); //手札から対象のカードを削除。
     player.field[emptyIndex] = card; //場にカードを追加。空いている枠に一番左に入る想定。
     player.currentPp -= card.cost;
     console.log(`${card.name}を場に出しました`);
 }
 
-//カードを墓地に送る関数
-function sendToCemetery(player, card) {
+//場のカードを墓地に送る関数
+function sendFieldCardToCemetery(player, card) {
     const cardIndex = player.field.indexOf(card);
     if (cardIndex === -1) {
         console.log(`${card.name}はフィールドに存在しません。`);
@@ -379,6 +465,22 @@ function sendToCemetery(player, card) {
     player.field[cardIndex] = null; //場から対象のカードを削除。
     player.cemetery.push(card); //墓地に対象のカードを追加。
     console.log(`${card.name}を墓地に送りました。`);
+}
+
+// 手札のカードを墓地に送る関数
+function sendHandCardToCemetery(player, card) {
+    const cardIndex = player.hand.indexOf(card);
+
+    if (cardIndex === -1) {
+        console.log(`${card.name}は手札に存在しません。`);
+        return false;
+    }
+
+    player.hand.splice(cardIndex, 1);
+    player.cemetery.push(card);
+
+    console.log(`${card.name}を手札から墓地に送りました。`);
+    return true;
 }
 
 //手札クリック時にカードを選択済みにする関数
@@ -400,7 +502,7 @@ function selectHandCard(card) {
         displayMessageWithActions("PPが足りません。");
         return;
     }
-    if (!player.field.includes(null)) {
+    if (card.type === "follower" && !player.field.includes(null)) {
         selectedHandCard = null;
         displayMessageWithActions("フィールドに空きがありません。");
         return;
@@ -410,14 +512,26 @@ function selectHandCard(card) {
     selectedTarget = null;
     //選択された手札のカードをグローバル変数に代入。
     selectedHandCard = card;
-    displayMessageWithActions(
-        `${card.name}を選択しました。`,
-        messageActions.whenHandSelected
-    );//メッセージ表示。
+
+    //フォロワーだった場合のボタン表示
+    if(selectedHandCard.type === "follower") {
+        displayMessageWithActions(
+            `${card.name}を選択しました。`,
+            messageActions.whenFollowerHandSelected
+        );
+    }
+
+    //スペルだった場合のボタン表示
+    if(selectedHandCard.type === "spell") {
+        displayMessageWithActions(
+            `${card.name}を選択しました。`,
+            messageActions.whenSpellHandSelected
+        );   
+    }
 }
 
-//選択した手札のカードを場に出す関数
-function playSelectedHandCard() {
+//選択した手札のフォロワーカードを場に出す関数
+function playSelectedFollower() {
     //ゲームが終了していたら入力を受け付けない。
     if (isGameOver) {
         return;
@@ -428,6 +542,11 @@ function playSelectedHandCard() {
     //selectedHandCardの存在確認。
     if(!card) {
         console.log("まだカードが選択されていません。");
+        return;
+    }
+    //フォロワーかどうかの確認
+    if (card.type !== "follower") {
+        displayMessageWithActions("このカードはフォロワーではありません。");
         return;
     }
     //手札にselectedHandCardがあるかの確認。念のため。
@@ -456,10 +575,98 @@ function playSelectedHandCard() {
         displayMessageWithActions("フィールドに空きがありません。");
         return;
     }
-    playCard(player, card);
+    moveHandToField(player, card);
     selectedHandCard = null;
     displayMessageWithActions(`${card.name}を場に出しました。`);
     renderGame(players);
+}
+
+//選択した手札のスペルカードを使う関数
+function playSelectedSpell() {
+    //ゲームが終了していたら入力を受け付けない。
+    if (isGameOver) {
+        return;
+    }
+    //定数の定義
+    const player = players[0];
+    const opponentPlayer = getOpponentPlayer();
+    const card = selectedHandCard; //selectedHandCardを別変数に退避。念のため。
+    //selectedHandCardの存在確認。
+    if(!card) {
+        console.log("まだカードが選択されていません。");
+        return;
+    }
+    //スペルカードかどうかの確認
+    if (card.type !== "spell") {
+        displayMessageWithActions("このカードはスペルではありません。");
+        return;
+    }
+    //手札にselectedHandCardがあるかの確認。念のため。
+    if (!player.hand.includes(card)) {
+        selectedHandCard = null;
+        displayMessageWithActions("そのカードは手札にありません。");
+        return;
+    }
+    //相手ターンに手札がクリックされた場合のアラート表示。
+    if (!isPlayerTurn()) {
+        displayMessageWithActions("今は自分のターンではありません。");
+        return;
+    }
+    //バトル中に手札がクリックされた場合のアラート表示。
+    if (battleMode) {
+        displayMessageWithActions("バトル中は手札からカードを出せません。");
+        return;
+    }
+    //召喚実行前のPP確認
+    if (player.currentPp < card.cost) {
+        displayMessageWithActions("PPが足りません。");
+        return;
+    }
+    
+    //手札にあるか確認
+    const cardIndex = player.hand.indexOf(card);
+    if (cardIndex === -1) {
+        console.error("手札にカードが見つかりません。", card);
+    }
+
+    //効果処理を行うと同時に成功したか確認
+    const effectSuccess = useSpellEffect(card, player, opponentPlayer);
+    if (!effectSuccess) {
+        return;
+    }
+
+    player.currentPp -= card.cost;
+
+    //カード移動を行うと同時に成功したか確認
+    const moveSuccess = sendHandCardToCemetery(player, card);
+    if (!moveSuccess) {
+        return;
+    }
+
+    selectedHandCard = null;
+
+    //勝敗判定
+    const winner = checkWinner(players);
+    if (winner) {
+        finishGame(winner);
+        return;
+    }
+
+    renderGame(players);
+}
+
+//スペルカードの効果を呼び出す関数
+function useSpellEffect(card, player, opponent) {
+    const effect = spellEffects[card.effectKey];
+
+    if (!effect) {
+        console.error(`未定義のspell効果です: ${card.effectKey}`);
+        displayMessageWithActions("このspellの効果はまだ実装されていません。");
+        return false;
+    }
+
+    effect(card, player, opponent);
+    return true;
 }
 
 //バトル処理を担当する関数
@@ -479,10 +686,10 @@ function battle(attackPlayer, attacker, defendPlayer, defender) {
     console.log(`${defender.name}の残りHP: ${defender.currentHp}`);
     console.log(`${attacker.name}の残りHP: ${attacker.currentHp}`);
     if (defender.currentHp <= 0) {
-        sendToCemetery(defendPlayer, defender);
+        sendFieldCardToCemetery(defendPlayer, defender);
     }
     if (attacker.currentHp <= 0) {
-        sendToCemetery(attackPlayer, attacker);
+        sendFieldCardToCemetery(attackPlayer, attacker);
     }
 }
 
@@ -664,10 +871,21 @@ function switchTurn() {
 
 // 手札にプレイできるカードがあるか判定する関数
 function hasPlayableHandCard(player) {
-    if (!player.field.includes(null)) {
+    return player.hand.some(card => {
+        if (card.cost > player.currentPp) {
+            return false;
+        }
+
+        if (card.type === "follower") {
+            return player.field.includes(null);
+        }
+
+        if (card.type === "spell") {
+            return true;
+        }
+
         return false;
-    }
-    return player.hand.some(card => card.cost <= player.currentPp);
+    });
 }
 
 // 場に行動可能なフォロワーがあるか判定する関数
@@ -808,7 +1026,7 @@ async function mainPhase(player, opponentPlayer) {
         await cpuAction(player, opponentPlayer, {
             players,
             isGameOver: () => isGameOver,
-            playCard,
+            moveHandToField,
             battle,
             attackLeader,
             renderGame,
@@ -838,7 +1056,7 @@ function endPhase(player) {
 //         const playableCards = cpu.hand.filter(card => card.cost <= cpu.currentPp);
 //         if (playableCards.length > 0) {
 //             const highestAtCard = playableCards.reduce((a, b) => (a.currentAt > b.currentAt ? a : b));//一番ATが高いカードを抽出。
-//             playCard(cpu, highestAtCard); //場に出す。
+//             moveHandToField(cpu, highestAtCard); //場に出す。
 //             renderGame(players); //HTML上の表示を更新。
 //         }
 //     }
@@ -943,6 +1161,7 @@ function renderCardList(cards, elementId, areaType) {
 
         cardElement.className = "card"; //クラス名を指定。
         cardElement.innerHTML = `
+        <div>${card.type}</div>
         <div><strong>${card.name}</strong></div>
         <div>コスト: ${card.cost}</div>
         <div>攻撃力: ${card.currentAt ?? card.at}</div>
