@@ -7,104 +7,113 @@
         <link rel="stylesheet" href="style.css">
     </head>
     <body>
-        <main class="game-board">
-
-            <!-- CPU側の手札・ステータス表示 -->
-            <div class="player-area">
-                <div id="cpu-hand" class="cpu-hand-row"></div>
-            </div>
-
-            <!-- フィールド -->
-            <div class="field">
-                <!-- CPU側 -->
-                <section class="field-side cpu-field-side">
-                    <div class="side-piles">
-                        <div id="cpu-deck" class="pile deck-pile">
-                            <span id="cpu-deck-count">0</span>
-                        </div>
-                        <div id="cpu-cemetery" class="pile cemetery-pile">
-                            <span id="cpu-cemetery-count">0</span>
-                        </div>
-                    </div>
-                    <div class="card-zones">
-                        <div id="cpu-spell-field" class="field-row"></div> <!--将来的にspell用のエリアになる予定-->
-                        <div id="cpu-field" class="field-row"></div>
-                    </div>
-                    <div class="leader-panel">
-                        <div class="leader-status">
-                            <p>HP: <span id="cpu-hp"></span></p>
-                            <p>PP: <span id="cpu-pp"></span></p>
-                            <p><span id="cpu-name"></span></p>
-                        </div>
-                        <div class="leader-image-frame">
-                            <span class="leader-image-placeholder">LEADER</span>
-                        </div>
-                    </div>
-                </section>
-                
-                <!-- プレイヤー側 -->
-                <section class="field-side player-field-side">
-                    <div class="leader-panel">
-                        <div class="leader-status">
-                            <p>HP: <span id="player-hp"></span></p>
-                            <p>PP: <span id="player-pp"></span></p>
-                            <p><span id="player-name"></span></p>
-                        </div>
-                        <div class="leader-image-frame">
-                            <span class="leader-image-placeholder">LEADER</span>
-                        </div>
-                    </div>
-                    <div class="card-zones">
-                        <div id="player-field" class="field-row"></div>
-                        <div id="player-spell-field" class="field-row"></div> <!--将来的にspell用のエリアになる予定-->
-                    </div>
-                    <div class="side-piles">
-                        <div id="player-cemetery" class="pile cemetery-pile">
-                            <span id="player-cemetery-count">0</span>
-                        </div>
-                        <div id="player-deck" class="pile deck-pile">
-                            <span id="player-deck-count">0</span>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        
-            <!-- 自分側の手札・ステータス表示 -->
-            <div class="player-area">
-                <div id="player-hand" class="hand-row"></div>
-                <fieldset class="message-area">
-                    <legend>Message</legend>
-                    <p id="message-text" class="message-text">▶ 操作を選んでください。</p>
-                    <div id="message-actions" class="message-actions"></div>
-                </fieldset>
-                <div class="buttons">
-                    <button id="turn-end-btn" type="button">ターンエンド</button>
+        <div id="title-screen" class="title-screen">
+            <h1 class="game-title">my-cardgame</h1>
+            <p class="title-description">
+                相手リーダーのHPを0にしよう！
+            </p>
+            <button id="start-game-button" type="button">ゲーム開始</button>
+        </div>
+        <!-- ゲーム画面、hidden属性がついているときは非表示 -->
+        <div id="game-screen" class="hidden">
+            <main class="game-board">
+                <!-- CPU側の手札・ステータス表示 -->
+                <div class="player-area">
+                    <div id="cpu-hand" class="cpu-hand-row"></div>
                 </div>
-            </div>
 
-            <!-- カードのプレビューモーダル -->
-            <div id="card-preview-modal" class="card-preview-modal" hidden>
-                <div class="card-preview-content">
-                    <button id="close-card-preview-button" class="modal-close-button">×</button>
-
-                    <div class="preview-card-frame">
-                    <h2 id="preview-card-name"></h2>
-
-                    <div class="preview-card-image-area">
-                        <img id="preview-card-image" alt="">
-                    </div>
-
-                    <div class="preview-card-status">
-                        <p>コスト：<span id="preview-card-cost"></span></p>
-                        <p>攻撃力：<span id="preview-card-at"></span></p>
-                        <p>体力：<span id="preview-card-hp"></span></p>
-                    </div>
-
-                    <p id="preview-card-text"></p>
+                <!-- フィールド -->
+                <div class="field">
+                    <!-- CPU側 -->
+                    <section class="field-side cpu-field-side">
+                        <div class="side-piles">
+                            <div id="cpu-deck" class="pile deck-pile">
+                                <span id="cpu-deck-count">0</span>
+                            </div>
+                            <div id="cpu-cemetery" class="pile cemetery-pile">
+                                <span id="cpu-cemetery-count">0</span>
+                            </div>
+                        </div>
+                        <div class="card-zones">
+                            <div id="cpu-spell-field" class="field-row"></div> <!--将来的にspell用のエリアになる予定-->
+                            <div id="cpu-field" class="field-row"></div>
+                        </div>
+                        <div class="leader-panel">
+                            <div class="leader-status">
+                                <p>HP: <span id="cpu-hp"></span></p>
+                                <p>PP: <span id="cpu-pp"></span></p>
+                                <p><span id="cpu-name"></span></p>
+                            </div>
+                            <div class="leader-image-frame">
+                                <span class="leader-image-placeholder">LEADER</span>
+                            </div>
+                        </div>
+                    </section>
+                    
+                    <!-- プレイヤー側 -->
+                    <section class="field-side player-field-side">
+                        <div class="leader-panel">
+                            <div class="leader-status">
+                                <p>HP: <span id="player-hp"></span></p>
+                                <p>PP: <span id="player-pp"></span></p>
+                                <p><span id="player-name"></span></p>
+                            </div>
+                            <div class="leader-image-frame">
+                                <span class="leader-image-placeholder">LEADER</span>
+                            </div>
+                        </div>
+                        <div class="card-zones">
+                            <div id="player-field" class="field-row"></div>
+                            <div id="player-spell-field" class="field-row"></div> <!--将来的にspell用のエリアになる予定-->
+                        </div>
+                        <div class="side-piles">
+                            <div id="player-cemetery" class="pile cemetery-pile">
+                                <span id="player-cemetery-count">0</span>
+                            </div>
+                            <div id="player-deck" class="pile deck-pile">
+                                <span id="player-deck-count">0</span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            
+                <!-- 自分側の手札・ステータス表示 -->
+                <div class="player-area">
+                    <div id="player-hand" class="hand-row"></div>
+                    <fieldset class="message-area">
+                        <legend>Message</legend>
+                        <p id="message-text" class="message-text">▶ 操作を選んでください。</p>
+                        <div id="message-actions" class="message-actions"></div>
+                    </fieldset>
+                    <div class="buttons">
+                        <button id="turn-end-btn" type="button">ターンエンド</button>
                     </div>
                 </div>
-            </div>
-        </main>
+
+                <!-- カードのプレビューモーダル -->
+                <div id="card-preview-modal" class="card-preview-modal" hidden>
+                    <div class="card-preview-content">
+                        <button id="close-card-preview-button" class="modal-close-button">×</button>
+
+                        <div class="preview-card-frame">
+                        <h2 id="preview-card-name"></h2>
+
+                        <div class="preview-card-image-area">
+                            <img id="preview-card-image" alt="">
+                        </div>
+
+                        <div class="preview-card-status">
+                            <p>コスト：<span id="preview-card-cost"></span></p>
+                            <p>攻撃力：<span id="preview-card-at"></span></p>
+                            <p>体力：<span id="preview-card-hp"></span></p>
+                        </div>
+
+                        <p id="preview-card-text"></p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
         <script type="module" src="main.js"></script>
     </body>
 </html>

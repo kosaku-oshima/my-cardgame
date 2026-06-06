@@ -1178,6 +1178,9 @@ const TURN_MESSAGE_WAIT = 1200;
 document.addEventListener("DOMContentLoaded", async () => {
     //HTML要素を定義。
     const turnEndBtn = document.getElementById("turn-end-btn");
+    const startGameButton = document.getElementById("start-game-button");
+    const titleScreen = document.getElementById("title-screen");
+    const gameScreen = document.getElementById("game-screen");
     //playerが持つ変数を後で使うための定義。
     const player = players[0];
     
@@ -1208,9 +1211,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     //カードのプレビューモーダルを閉じるボタンがクリックされた時の処理
     document.getElementById("close-card-preview-button").addEventListener("click", closeCardPreview);
 
-    await startGame(players); //ゲーム開始。
-    await turnCycle(); //ターン処理。
-    renderGame(players); //画面描画。
+    //ゲーム開始ボタンがクリックされた時の処理
+    startGameButton.addEventListener("click", async () => {
+        startGameButton.disabled = true; //ゲーム開始ボタンを連続で押せないよう無効化する。
+        
+        titleScreen.classList.add("hidden"); //タイトル画面を非表示にする。
+        gameScreen.classList.remove("hidden"); //ゲーム画面を表示にする。
+    
+        await startGame(players); //ゲーム開始。
+        await turnCycle(); //ターン処理。
+        renderGame(players); //画面描画。
+      });
 });
 
 
