@@ -8,6 +8,29 @@ body {
   background: #f8f8f7;
 }
 
+.difficulty-select-area {
+  margin: 16px 0;
+  text-align: center;
+}
+
+.difficulty-title {
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.difficulty-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 8px;
+  cursor: pointer;
+}
+
+.difficulty-option input[type="radio"] {
+  appearance: auto;
+  -webkit-appearance: auto;
+}
+
 .game-board {
   max-width: 480px;
   min-height: 100dvh;

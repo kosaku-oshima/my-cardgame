@@ -933,7 +933,10 @@ async function mainPhase(player, opponentPlayer) {
             attackLeader,
             renderGame,
             displayMessageWithActions,
-            wait
+            wait,
+            useSpellEffect,
+            sendHandCardToCemetery,
+            cpuLevel,
           });
         await finishTurn();
     }
@@ -1171,6 +1174,8 @@ let battleMode = false;
 let selectedAttacker = null;
 let selectedTarget = null;
 let isGameOver = false;
+//ゲームの難易度（CPUの強さ）を決める変数
+let cpuLevel = "normal";
 //処理の待ち時間を決める定数
 const TURN_MESSAGE_WAIT = 1200;
 
@@ -1214,7 +1219,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     //ゲーム開始ボタンがクリックされた時の処理
     startGameButton.addEventListener("click", async () => {
         startGameButton.disabled = true; //ゲーム開始ボタンを連続で押せないよう無効化する。
-        
+
+        const selectedDifficulty = document.querySelector('input[name="difficulty"]:checked');
+        cpuLevel = selectedDifficulty.value; //ゲーム難易度を選択された値で上書きする。
         titleScreen.classList.add("hidden"); //タイトル画面を非表示にする。
         gameScreen.classList.remove("hidden"); //ゲーム画面を表示にする。
     

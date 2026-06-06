@@ -1,8 +1,31 @@
-// cpu.js
-
 //待ち時間の定数。CPUのターンのスピードはこの定数で調節する。
 const CPU_WAIT_SHORT = 800;
 const CPU_WAIT_NORMAL = 1200;
+
+//難易度パラメーター
+const CPU_LEVEL_SETTINGS = {
+    easy: {
+        name: "やさしい",
+        leaderAttackRate: 0.8,
+        boardControlRate: 0.8,
+        survivalPenaltyRate: 0.8,
+        spellScoreRate: 0.7,
+    },
+    normal: {
+        name: "ふつう",
+        leaderAttackRate: 1.0,
+        boardControlRate: 1.0,
+        survivalPenaltyRate: 1.0,
+        spellScoreRate: 1.0,
+    },
+    hard: {
+        name: "つよい",
+        leaderAttackRate: 1.6,
+        boardControlRate: 1.6,
+        survivalPenaltyRate: 1.8,
+        spellScoreRate: 1.8,
+    },
+};
 
 export async function cpuAction(cpu, opponentPlayer, helpers) {
     //helpersから、この関数内で使う関数や値を取り出す
@@ -15,7 +38,12 @@ export async function cpuAction(cpu, opponentPlayer, helpers) {
         renderGame,
         displayMessageWithActions,
         wait,
+        useSpellEffect,
+        sendHandCardToCemetery,
+        cpuLevel = "normal",
     } = helpers;
+
+    const difficulty = CPU_LEVEL_SETTINGS[cpuLevel] ?? CPU_LEVEL_SETTINGS.normal;
 
     // CPU以外に対して呼ばれていたら処理しない
     if (cpu.name !== "cpu") {
@@ -178,6 +206,290 @@ export async function cpuAction(cpu, opponentPlayer, helpers) {
         }
     }
 
+
+    //手札から今使用できるspellを抽出する関数
+    function getPlayableSpells() {
+        return cpu.hand.filter(card => {
+            return (
+                card &&
+                card.type === "spell" &&
+                card.cost <= cpu.currentPp
+            );
+        });
+    }
+
+    //spellの効果量として使えそうな数値を取得する関数
+    function getSpellPower(spell) {
+        return spell.effectValue ?? spell.power ?? spell.value ?? spell.amount ?? spell.damage ?? spell.heal ?? 0;
+    }
+
+    //対象の説明文を作る関数
+    function getTargetText(targetInfo) {
+        if (!targetInfo) {
+            return "";
+        }
+
+        if (targetInfo.type === "leader") {
+            return targetInfo.player === cpu ? "CPUリーダー" : "プレイヤーリーダー";
+        }
+
+        if (targetInfo.card) {
+            return `「${targetInfo.card.name}」`;
+        }
+
+        return "";
+    }
+
+    //spellの効果名が指定したキーワードを含むかを判定する関数
+    function hasEffectName(spell, keywords) {
+        const effectName = String(spell.effectKey ?? spell.effectName ?? "").toLowerCase();
+        return keywords.some(keyword => effectName.includes(keyword.toLowerCase()));
+    }
+
+    //spellを使ったときの価値を数値で評価する関数
+    function evaluateSpell(spell) {
+        const power = getSpellPower(spell);
+        const opponentFollowers = opponentPlayer.field.filter(card => card && card.type === "follower");
+        const cpuFollowers = cpu.field.filter(card => card && card.type === "follower");
+
+        //相手リーダーにダメージを与えるspellを評価する
+        if (hasEffectName(spell, ["leaderdamage", "damageleader", "damageenemyleader", "directdamage", "burn", "damage_leader"])) {
+            let score = power * 3 + spell.cost;
+
+            if (power >= opponentPlayer.hp) {
+                score += 999999;
+            }
+
+            if (opponentPlayer.hp <= 10) {
+                score += power * 2;
+            }
+
+            return {
+                spell,
+                targetInfo: {
+                    type: "leader",
+                    player: opponentPlayer,
+                },
+                score,
+            };
+        }
+
+        //相手フォロワーにダメージを与えるspellを評価する
+        if (hasEffectName(spell, ["followerdamage", "damagefollower", "damageenemy", "destroy", "damage_follower"])) {
+            let bestTarget = null;
+            let bestScore = -Infinity;
+
+            opponentFollowers.forEach(target => {
+                const targetValue = getCardValue(target);
+                let score = power * 2 + getAt(target) * 1.5;
+
+                if (power >= getHp(target) || hasEffectName(spell, ["destroy"])) {
+                    score += targetValue * 2.5;
+                }
+
+                if (cpu.hp <= 8) {
+                    score += getAt(target) * 1.5;
+                }
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestTarget = target;
+                }
+            });
+
+            if (!bestTarget) {
+                return null;
+            }
+
+            return {
+                spell,
+                targetInfo: {
+                    type: "follower",
+                    player: opponentPlayer,
+                    card: bestTarget,
+                },
+                score: bestScore,
+            };
+        }
+
+        //CPUリーダーを回復するspellを評価する
+        if (hasEffectName(spell, ["heal", "recovery", "recover"])) {
+            const lostHp = Math.max(0, 20 - cpu.hp);
+
+            if (lostHp <= 0) {
+                return null;
+            }
+
+            let score = Math.min(power || lostHp, lostHp) * 2;
+
+            if (cpu.hp <= 8) {
+                score += 10;
+            }
+
+            return {
+                spell,
+                targetInfo: {
+                    type: "leader",
+                    player: cpu,
+                },
+                score,
+            };
+        }
+
+        //CPUのフォロワーを強化するspellを評価する
+        if (hasEffectName(spell, ["buff", "powerup", "strengthen", "plusat", "plus_at"])) {
+            let bestTarget = null;
+            let bestScore = -Infinity;
+
+            cpuFollowers.forEach(target => {
+                const score = getCardValue(target) + getAt(target) * 1.5 + spell.cost;
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestTarget = target;
+                }
+            });
+
+            if (!bestTarget) {
+                return null;
+            }
+
+            return {
+                spell,
+                targetInfo: {
+                    type: "follower",
+                    player: cpu,
+                    card: bestTarget,
+                },
+                score: bestScore,
+            };
+        }
+
+        //ドロー系のspellを評価する
+        if (hasEffectName(spell, ["draw"])) {
+            if (cpu.deck.length === 0) {
+                return null;
+            }
+
+            return {
+                spell,
+                targetInfo: null,
+                score: 6 + spell.cost,
+            };
+        }
+
+        //効果名だけでは判断できないspellは、使える場合だけ低めに評価する
+        if (spell.effectKey || spell.effectName) {
+            return {
+                spell,
+                targetInfo: null,
+                score: 2 + spell.cost,
+            };
+        }
+
+        return null;
+    }
+
+    //最も使う価値のあるspellを選ぶ関数
+    function chooseBestSpell() {
+        const playableSpells = getPlayableSpells();
+        let bestSpellAction = null;
+        let bestScore = -Infinity;
+
+        playableSpells.forEach(spell => {
+            const spellAction = evaluateSpell(spell);
+
+            if (!spellAction) {
+                return;
+            }
+
+            const adjustedScore = spellAction.score * difficulty.spellScoreRate;
+            if (adjustedScore > bestScore) {
+                bestScore = adjustedScore;
+                bestSpellAction = spellAction;
+            }
+        });
+
+        //スコアが低すぎるspellは無理に使わない
+        if (bestScore < 4) {
+            return null;
+        }
+
+        return bestSpellAction;
+    }
+
+    //選んだspellを実際に使用する関数
+    async function useBestSpell() {
+        //useSpellEffectがhelpersに渡されていなければ、CPUはspellを使用しない
+        if (typeof useSpellEffect !== "function") {
+            return;
+        }
+
+        while (true) {
+            if (isGameOver()) {
+                return;
+            }
+
+            const spellAction = chooseBestSpell();
+
+            if (!spellAction) {
+                return;
+            }
+
+            const { spell, targetInfo } = spellAction;
+
+            if (!cpu.hand.includes(spell)) {
+                return;
+            }
+
+            if (cpu.currentPp < spell.cost) {
+                return;
+            }
+
+            const targetText = getTargetText(targetInfo);
+            const message = targetText
+                ? `CPUは「${spell.name}」を${targetText}に使います。`
+                : `CPUは「${spell.name}」を使います。`;
+
+            displayMessageWithActions(message);
+            await wait(CPU_WAIT_NORMAL);
+
+            const ppBefore = cpu.currentPp;
+            const handLengthBefore = cpu.hand.length;
+
+            const effectSuccess = useSpellEffect(spell, cpu, opponentPlayer);
+
+            if (!effectSuccess) {
+                return;
+            }
+
+            cpu.currentPp -= spell.cost;
+
+            const moveSuccess = sendHandCardToCemetery(cpu, spell);
+
+            if (!moveSuccess) {
+                return;
+            }
+
+            console.log(`CPUは${spell.name}を使いました。`);
+
+            const winner = players.find(player => player.hp <= 0);
+            if (winner || isGameOver()) {
+                renderGame(players);
+                return;
+            }
+
+            renderGame(players);
+            await wait(CPU_WAIT_SHORT);
+
+            //spell使用後に手札もPPも変わっていない場合、無限ループを避けるため処理を終える
+            if (cpu.hand.includes(spell) && cpu.currentPp === ppBefore && cpu.hand.length === handLengthBefore) {
+                console.log("spell使用後に手札やPPが変化しなかったため、CPUのspell使用処理を終了します。");
+                return;
+            }
+        }
+    }
+
     //場のカードで攻撃可能なカードを抽出する関数
     function getAttackableCards() {
         return cpu.field.filter(card => {
@@ -245,16 +557,16 @@ export async function cpuAction(cpu, opponentPlayer, helpers) {
                 // 相手フォロワーを倒せるなら高く評価する。
                 // 倒せない場合でも、ダメージを与える価値として少し評価する。
                 if (defenderDies) {
-                    score += defenderValue * 2.0;
+                    score += defenderValue * 2.0 * difficulty.boardControlRate;
                 } else {
-                    score += getAt(attacker) * 0.6;
+                    score += getAt(attacker) * 0.6 * difficulty.boardControlRate;
                 }
 
                 // 攻撃後に自分のフォロワーが生き残るなら加点、倒されるなら減点する
                 if (attackerSurvives) {
                     score += attackerValue * 0.8;
                 } else {
-                    score -= attackerValue * 1.6;
+                    score -= attackerValue * 1.6 * difficulty.survivalPenaltyRate;
                 }
 
                 score += getAt(defender) * 1.2;
@@ -279,10 +591,10 @@ export async function cpuAction(cpu, opponentPlayer, helpers) {
                 }
             });
 
-            let leaderAttackScore = getAt(attacker) * 2.2;
+            let leaderAttackScore = getAt(attacker) * 2.2 * difficulty.leaderAttackRate;
 
             if (opponentPlayer.hp <= 10) {
-                leaderAttackScore += getAt(attacker) * 2.0;
+                leaderAttackScore += getAt(attacker) * 2.0 * difficulty.leaderAttackRate;
             }
 
             if (opponentPlayer.hp <= 6) {
@@ -380,6 +692,13 @@ export async function cpuAction(cpu, opponentPlayer, helpers) {
         return;
     }
 
+    //最も使う価値のあるspellを使用する
+    await useBestSpell();
+
+    if (isGameOver()) {
+        return;
+    }
+
     //最も価値のある攻撃行動を実行する
     await attackBestTargets();
 
@@ -389,6 +708,13 @@ export async function cpuAction(cpu, opponentPlayer, helpers) {
 
     //再度最も価値のある組み合わせのカードを場に出す
     await playBestCards();
+
+    if (isGameOver()) {
+        return;
+    }
+
+    //再度最も使う価値のあるspellを使用する
+    await useBestSpell();
 
     if (isGameOver()) {
         return;
