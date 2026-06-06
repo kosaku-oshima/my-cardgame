@@ -158,102 +158,6 @@ const spellEffects = {
     },
 };
 
-//カード情報の定義　※CPUなど複数用意する場合はこれが必要になると思われる。
-// const cards = [
-    //followerのみデッキ作成時に時にisInactivated(true=行動不能)を付与する。
-    // {
-        // type : "follower", //follower,spell,amuletの3種を実装予定
-        // name : "エルフの剣士",
-        // hp : 1, //hit point
-        // at : 1, //attack point
-        // cost : 1, //召喚コスト
-//     },
-//     {
-//         type : "follower",
-//         name : "砦を守る翼竜",
-//         hp : 2,
-//         at : 1,
-//         cost : 1,
-//     },
-//     {
-//         type : "follower",
-//         name : "グレムリン",
-//         hp : 5,
-//         at : 2,
-//         cost : 1,
-//     },
-//     {
-//         type: "follower",
-//         name: "見習い剣士",
-//         hp: 1,
-//         at: 1,
-//         cost: 1,
-//     },
-//     {
-//         type: "follower",
-//         name: "森の弓使い",
-//         hp: 1,
-//         at: 2,
-//         cost: 1,
-//     },
-//     {
-//         type: "follower",
-//         name: "盾を持つ兵士",
-//         hp: 3,
-//         at: 1,
-//         cost: 2,
-//     },
-//     {
-//         type: "follower",
-//         name: "炎の魔術師",
-//         hp: 2,
-//         at: 3,
-//         cost: 2,
-//     },
-//     {
-//         type: "follower",
-//         name: "荒野の戦士",
-//         hp: 3,
-//         at: 3,
-//         cost: 3,
-//     },
-//     {
-//         type: "follower",
-//         name: "癒しの聖職者",
-//         hp: 4,
-//         at: 2,
-//         cost: 3,
-//     },
-//     {
-//         type: "follower",
-//         name: "鋼の騎士",
-//         hp: 5,
-//         at: 4,
-//         cost: 4,
-//     },
-//     {
-//         type: "follower",
-//         name: "雷鳴の獣",
-//         hp: 4,
-//         at: 5,
-//         cost: 4,
-//     },
-//     {
-//         type: "follower",
-//         name: "古代の守護者",
-//         hp: 7,
-//         at: 4,
-//         cost: 5,
-//     },
-//     {
-//         type: "follower",
-//         name: "竜騎士",
-//         hp: 6,
-//         at: 7,
-//         cost: 6,
-//     },
-// ];
-
 //メッセージエリアに表示するボタンのセット
 const messageActions = {
     whenFollowerHandSelected : [
@@ -1019,10 +923,8 @@ async function startPhase(player) {
 async function mainPhase(player, opponentPlayer) {
     console.log(`${player.name}のメインフェイズを始めます。`);
     //CPUのターンは自動で行動。
-    if (player.name === "cpu") {
-        // cpuAction(player, opponentPlayer);
-        
-        //テストプレイ用にChatGPTが作った強いcpuActionを呼び出す。
+    if (player.name === "cpu") {        
+        //cpuActionを呼び出す。
         await cpuAction(player, opponentPlayer, {
             players,
             isGameOver: () => isGameOver,
@@ -1042,38 +944,6 @@ function endPhase(player) {
     console.log(`${player.name}のターンを終了します。`);
     switchTurn();
 }
-
-// --------------------------------------------------------
-// メインフェイズのCPUの行動を記述
-// --------------------------------------------------------
-// function cpuAction(cpu, opponentPlayer) {
-//     if (cpu.name !== "cpu") {
-//         console.log("CPUのターンではないのにcpuActionが呼ばれました。");
-//         return;
-//     }
-//     //手札に出せるカードがあれば出す。
-//     if (cpu.hand.length > 0) {
-//         const playableCards = cpu.hand.filter(card => card.cost <= cpu.currentPp);
-//         if (playableCards.length > 0) {
-//             const highestAtCard = playableCards.reduce((a, b) => (a.currentAt > b.currentAt ? a : b));//一番ATが高いカードを抽出。
-//             moveHandToField(cpu, highestAtCard); //場に出す。
-//             renderGame(players); //HTML上の表示を更新。
-//         }
-//     }
-//     //攻撃可能なカードがあり、かつ倒せるフォロワーがいれば攻撃する
-//     const attackableCards = cpu.field.filter(card => card.type === "follower" && card.isInactivated === false);
-//     if (attackableCards.length > 0) {
-//         const attacker = attackableCards.reduce((a, b) => (a.currentAt > b.currentAt ? a : b));
-//         const targetCards = opponentPlayer.field.filter(card => card.type === "follower" && attacker.currentAt >= card.currentHp);
-//         if (targetCards.length > 0) {
-//             const target = targetCards.reduce((a, b) => (a.currentAt > b.currentAt ? a : b));
-//             battle(cpu, attacker, opponentPlayer, target);
-//         } else {
-//             attackLeader(attacker, opponentPlayer);
-//         }
-//     }    
-// }
-
 
 // --------------------------------------------------------
 // 各フェーズの呼び出し方を制御する関数を記述
